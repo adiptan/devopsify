@@ -1,0 +1,63 @@
+---
+- name: Deploy DevOps Interview Bot
+  hosts: sandbox
+  become: yes
+  vars:
+    project_path: /root/.openclaw/workspace/projects/devops_interview_bot
+    bot_token: "{{ lookup('env', 'DEVOPS_BOT_TOKEN') | default(lookup('file', '/root/.openclaw/workspace/projects/time_counting_bot/.env').split('=')[1], true) }}"
+  
+  tasks:
+    - name: Ensure project directory exists
+      file:
+        path: "{{ project_path }}"
+        state: directory
+        mode: '0755'
+
+    - name: Copy .env file with bot token
+      copy:
+        content: "BOT_TOKEN={{ bot_token }}\n"
+        dest: "{{ project_path }}/.env"
+        mode: '0600'
+
+    - name: Pull latest code from Git
+      git:
+        repo: https://github.com/kotivproduction/devops_interview_bot.git
+        dest: "{{ project_path }}"
+        version: main
+        force: yes
+      ignore_errors: yes  # На случай если репо ещё не создан
+
+    - name: Stop existing containers
+      command: docker compose down
+      args:
+        chdir: "{{ project_path }}"
+      ignore_errors: yes
+
+    - name: Build Docker image
+      command: docker compose build
+      args:
+        chdir: "{{ project_path }}"
+
+    - name: Start containers
+      command: docker compose up -d
+      args:
+        chdir: "{{ project_path }}"
+
+    - name: Wait for container to be healthy
+      command: docker compose ps
+      args:
+        chdir: "{{ project_path }}"
+      register: container_status
+      retries: 5
+      delay: 3
+      until: "'running' in container_status.stdout"
+
+    - name: Show container logs
+      command: docker compose logs --tail=20
+      args:
+        chdir: "{{ project_path }}"
+      register: logs
+
+    - name: Print logs
+      debug:
+        msg: "{{ logs.stdout_lines }}"

@@ -1,0 +1,502 @@
+[
+  {
+    "id": 1,
+    "category": "nginx",
+    "difficulty": "middle",
+    "question": "Найти Top 5 IP адресов из access.log",
+    "time_limit": 300,
+    "solution": "awk '{print $1}' /var/log/nginx/access.log | sort | uniq -c | sort -rn | head -5",
+    "explanation": "awk извлекает первый столбец (IP), sort сортирует, uniq -c считает повторения, sort -rn сортирует по числам в обратном порядке, head -5 выдаёт топ 5",
+    "hints": ["Используй awk для извлечения IP", "Не забудь sort и uniq -c"]
+  },
+  {
+    "id": 2,
+    "category": "nginx",
+    "difficulty": "middle",
+    "question": "Найти все запросы с кодом ответа 404 за последний час",
+    "time_limit": 300,
+    "solution": "awk -v date=$(date -d '1 hour ago' '+%d/%b/%Y:%H') '$4 ~ date && $9 == 404' /var/log/nginx/access.log",
+    "explanation": "awk фильтрует логи: $4 содержит timestamp, $9 — HTTP код. Переменная date содержит время час назад",
+    "hints": ["Используй awk с условием", "4-я колонка — время, 9-я — HTTP код"]
+  },
+  {
+    "id": 3,
+    "category": "nginx",
+    "difficulty": "middle",
+    "question": "Посчитать количество уникальных User-Agent в логах",
+    "time_limit": 240,
+    "solution": "awk -F'\"' '{print $6}' /var/log/nginx/access.log | sort -u | wc -l",
+    "explanation": "awk с разделителем \" извлекает User-Agent (6-е поле), sort -u оставляет уникальные, wc -l считает строки",
+    "hints": ["User-Agent находится в кавычках", "Используй awk -F для смены разделителя"]
+  },
+  {
+    "id": 4,
+    "category": "nginx",
+    "difficulty": "junior",
+    "question": "Показать последние 20 строк из error.log",
+    "time_limit": 120,
+    "solution": "tail -n 20 /var/log/nginx/error.log",
+    "explanation": "tail -n 20 выводит последние 20 строк файла",
+    "hints": ["Команда tail", "Флаг -n для количества строк"]
+  },
+  {
+    "id": 5,
+    "category": "nginx",
+    "difficulty": "middle",
+    "question": "Найти самый долгий запрос (по времени обработки) в access.log",
+    "time_limit": 300,
+    "solution": "awk '{print $NF, $0}' /var/log/nginx/access.log | sort -rn | head -1 | cut -d' ' -f2-",
+    "explanation": "$NF — последнее поле (время обработки), выводим его вперёд для сортировки, затем убираем после сортировки",
+    "hints": ["$NF — последнее поле", "Отсортируй по времени"]
+  },
+  {
+    "id": 6,
+    "category": "nginx",
+    "difficulty": "middle",
+    "question": "Посчитать среднее время ответа сервера (request_time) за сегодня",
+    "time_limit": 360,
+    "solution": "awk '{sum+=$NF; count++} END {print sum/count}' /var/log/nginx/access.log",
+    "explanation": "awk суммирует последнее поле ($NF = request_time), считает количество строк, в END выводит среднее",
+    "hints": ["Используй awk для суммирования", "END блок для финального вывода"]
+  },
+  {
+    "id": 7,
+    "category": "nginx",
+    "difficulty": "senior",
+    "question": "Найти все IP, которые делали более 1000 запросов за последний час",
+    "time_limit": 420,
+    "solution": "awk -v date=$(date -d '1 hour ago' '+%d/%b/%Y:%H') '$4 ~ date {print $1}' /var/log/nginx/access.log | sort | uniq -c | awk '$1 > 1000 {print $2}'",
+    "explanation": "Фильтруем по времени, извлекаем IP, считаем повторения, фильтруем >1000",
+    "hints": ["Комбинируй несколько awk", "Сначала фильтруй по времени"]
+  },
+  {
+    "id": 8,
+    "category": "nginx",
+    "difficulty": "middle",
+    "question": "Показать топ 10 самых популярных URL (без параметров)",
+    "time_limit": 300,
+    "solution": "awk '{print $7}' /var/log/nginx/access.log | cut -d'?' -f1 | sort | uniq -c | sort -rn | head -10",
+    "explanation": "$7 — это URL, cut -d'?' -f1 убирает параметры, затем считаем и сортируем",
+    "hints": ["7-я колонка — URL", "Убери GET параметры через cut"]
+  },
+  {
+    "id": 9,
+    "category": "nginx",
+    "difficulty": "junior",
+    "question": "Проверить конфигурацию Nginx без перезагрузки",
+    "time_limit": 60,
+    "solution": "nginx -t",
+    "explanation": "nginx -t проверяет синтаксис конфигурационных файлов без перезагрузки сервера",
+    "hints": ["Флаг -t", "Не нужен systemctl"]
+  },
+  {
+    "id": 10,
+    "category": "nginx",
+    "difficulty": "junior",
+    "question": "Перезагрузить Nginx без даунтайма (graceful reload)",
+    "time_limit": 90,
+    "solution": "nginx -s reload",
+    "explanation": "nginx -s reload делает graceful reload: новые воркеры запускаются, старые завершаются после обработки текущих запросов",
+    "hints": ["Флаг -s", "Команда reload"]
+  },
+  {
+    "id": 11,
+    "category": "bash",
+    "difficulty": "junior",
+    "question": "Найти все файлы .log в текущей директории рекурсивно",
+    "time_limit": 120,
+    "solution": "find . -name '*.log'",
+    "explanation": "find с флагом -name ищет файлы по паттерну. Точка означает текущую директорию",
+    "hints": ["Команда find", "Флаг -name для поиска по имени"]
+  },
+  {
+    "id": 12,
+    "category": "bash",
+    "difficulty": "middle",
+    "question": "Найти файлы больше 100MB в /var/log",
+    "time_limit": 180,
+    "solution": "find /var/log -type f -size +100M",
+    "explanation": "find с флагами -type f (только файлы) и -size +100M (больше 100 мегабайт)",
+    "hints": ["Флаг -size", "M = мегабайты"]
+  },
+  {
+    "id": 13,
+    "category": "bash",
+    "difficulty": "middle",
+    "question": "Удалить все файлы старше 30 дней в /tmp",
+    "time_limit": 240,
+    "solution": "find /tmp -type f -mtime +30 -delete",
+    "explanation": "find с -mtime +30 (старше 30 дней) и -delete для удаления. Осторожно с этой командой!",
+    "hints": ["Флаг -mtime для времени модификации", "Флаг -delete"]
+  },
+  {
+    "id": 14,
+    "category": "bash",
+    "difficulty": "junior",
+    "question": "Показать первые 10 строк файла /etc/passwd",
+    "time_limit": 60,
+    "solution": "head -n 10 /etc/passwd",
+    "explanation": "head выводит начало файла, -n 10 указывает количество строк",
+    "hints": ["Команда head", "Флаг -n"]
+  },
+  {
+    "id": 15,
+    "category": "bash",
+    "difficulty": "middle",
+    "question": "Посчитать количество строк в файле, содержащих слово ERROR",
+    "time_limit": 120,
+    "solution": "grep -c ERROR /var/log/app.log",
+    "explanation": "grep -c считает количество строк, содержащих паттерн",
+    "hints": ["Команда grep", "Флаг -c для подсчёта"]
+  },
+  {
+    "id": 16,
+    "category": "bash",
+    "difficulty": "middle",
+    "question": "Найти процессы, использующие порт 80",
+    "time_limit": 180,
+    "solution": "lsof -i :80",
+    "explanation": "lsof (list open files) с флагом -i :80 показывает процессы, слушающие порт 80",
+    "hints": ["Команда lsof", "Флаг -i для сетевых соединений"]
+  },
+  {
+    "id": 17,
+    "category": "bash",
+    "difficulty": "senior",
+    "question": "Найти топ 5 процессов по использованию CPU",
+    "time_limit": 240,
+    "solution": "ps aux --sort=-%cpu | head -6",
+    "explanation": "ps aux выводит все процессы, --sort=-%cpu сортирует по CPU (% убывание), head -6 берёт шапку + топ 5",
+    "hints": ["Команда ps aux", "Флаг --sort"]
+  },
+  {
+    "id": 18,
+    "category": "bash",
+    "difficulty": "middle",
+    "question": "Показать диски и их использование в человекочитаемом виде",
+    "time_limit": 120,
+    "solution": "df -h",
+    "explanation": "df (disk free) показывает использование дисков, -h (human-readable) в MB/GB",
+    "hints": ["Команда df", "Флаг -h"]
+  },
+  {
+    "id": 19,
+    "category": "bash",
+    "difficulty": "middle",
+    "question": "Показать размер директории /var/log в человекочитаемом виде",
+    "time_limit": 120,
+    "solution": "du -sh /var/log",
+    "explanation": "du (disk usage) показывает размер, -s (summary) только итог, -h (human-readable)",
+    "hints": ["Команда du", "Флаги -s и -h"]
+  },
+  {
+    "id": 20,
+    "category": "bash",
+    "difficulty": "senior",
+    "question": "Заменить все вхождения 'old_text' на 'new_text' в файле config.yml",
+    "time_limit": 240,
+    "solution": "sed -i 's/old_text/new_text/g' config.yml",
+    "explanation": "sed -i редактирует файл на месте, s/old/new/g заменяет все (g = global) вхождения",
+    "hints": ["Команда sed", "Флаг -i для редактирования in-place"]
+  },
+  {
+    "id": 21,
+    "category": "bash",
+    "difficulty": "middle",
+    "question": "Скачать файл по URL и сохранить как output.txt",
+    "time_limit": 120,
+    "solution": "curl -o output.txt https://example.com/file.txt",
+    "explanation": "curl -o сохраняет результат в указанный файл",
+    "hints": ["Команда curl", "Флаг -o для output"]
+  },
+  {
+    "id": 22,
+    "category": "bash",
+    "difficulty": "middle",
+    "question": "Создать архив tar.gz из директории /app",
+    "time_limit": 180,
+    "solution": "tar -czf app.tar.gz /app",
+    "explanation": "tar с флагами: -c (create), -z (gzip), -f (file). Порядок флагов важен!",
+    "hints": ["Команда tar", "Флаги -czf"]
+  },
+  {
+    "id": 23,
+    "category": "bash",
+    "difficulty": "middle",
+    "question": "Распаковать tar.gz архив",
+    "time_limit": 120,
+    "solution": "tar -xzf archive.tar.gz",
+    "explanation": "tar -xzf: -x (extract), -z (gzip), -f (file)",
+    "hints": ["Команда tar", "Флаг -x для extract"]
+  },
+  {
+    "id": 24,
+    "category": "bash",
+    "difficulty": "senior",
+    "question": "Отправить HTTP POST запрос с JSON телом",
+    "time_limit": 300,
+    "solution": "curl -X POST -H 'Content-Type: application/json' -d '{\"key\":\"value\"}' https://api.example.com/endpoint",
+    "explanation": "curl -X POST указывает метод, -H добавляет заголовок, -d передаёт тело запроса",
+    "hints": ["Флаг -X для метода", "Флаг -d для данных"]
+  },
+  {
+    "id": 25,
+    "category": "bash",
+    "difficulty": "middle",
+    "question": "Мониторить изменения в файле в реальном времени",
+    "time_limit": 90,
+    "solution": "tail -f /var/log/app.log",
+    "explanation": "tail -f (follow) выводит новые строки по мере их появления в файле",
+    "hints": ["Команда tail", "Флаг -f"]
+  },
+  {
+    "id": 26,
+    "category": "kubernetes",
+    "difficulty": "junior",
+    "question": "Показать все поды в namespace production",
+    "time_limit": 90,
+    "solution": "kubectl get pods -n production",
+    "explanation": "kubectl get pods выводит список подов, -n указывает namespace",
+    "hints": ["kubectl get pods", "Флаг -n для namespace"]
+  },
+  {
+    "id": 27,
+    "category": "kubernetes",
+    "difficulty": "middle",
+    "question": "Показать логи пода my-app за последние 100 строк",
+    "time_limit": 120,
+    "solution": "kubectl logs my-app --tail=100",
+    "explanation": "kubectl logs выводит логи, --tail=100 ограничивает последними 100 строками",
+    "hints": ["kubectl logs", "Флаг --tail"]
+  },
+  {
+    "id": 28,
+    "category": "kubernetes",
+    "difficulty": "middle",
+    "question": "Подключиться к shell внутри пода my-app",
+    "time_limit": 120,
+    "solution": "kubectl exec -it my-app -- /bin/bash",
+    "explanation": "kubectl exec -it запускает интерактивный терминал внутри контейнера",
+    "hints": ["kubectl exec", "Флаги -it для интерактивного режима"]
+  },
+  {
+    "id": 29,
+    "category": "kubernetes",
+    "difficulty": "junior",
+    "question": "Применить конфигурацию из файла deployment.yaml",
+    "time_limit": 60,
+    "solution": "kubectl apply -f deployment.yaml",
+    "explanation": "kubectl apply -f применяет конфигурацию из YAML файла",
+    "hints": ["kubectl apply", "Флаг -f для файла"]
+  },
+  {
+    "id": 30,
+    "category": "kubernetes",
+    "difficulty": "middle",
+    "question": "Масштабировать deployment my-app до 5 реплик",
+    "time_limit": 120,
+    "solution": "kubectl scale deployment my-app --replicas=5",
+    "explanation": "kubectl scale изменяет количество реплик deployment",
+    "hints": ["kubectl scale", "Флаг --replicas"]
+  },
+  {
+    "id": 31,
+    "category": "kubernetes",
+    "difficulty": "senior",
+    "question": "Показать использование ресурсов (CPU/RAM) всех подов",
+    "time_limit": 180,
+    "solution": "kubectl top pods --all-namespaces",
+    "explanation": "kubectl top pods показывает метрики использования, --all-namespaces для всех namespace",
+    "hints": ["kubectl top", "Флаг --all-namespaces"]
+  },
+  {
+    "id": 32,
+    "category": "kubernetes",
+    "difficulty": "middle",
+    "question": "Удалить под my-app принудительно (force)",
+    "time_limit": 120,
+    "solution": "kubectl delete pod my-app --force --grace-period=0",
+    "explanation": "--force и --grace-period=0 удаляют под немедленно без graceful shutdown",
+    "hints": ["kubectl delete", "Флаги --force и --grace-period"]
+  },
+  {
+    "id": 33,
+    "category": "kubernetes",
+    "difficulty": "middle",
+    "question": "Показать все сервисы в кластере",
+    "time_limit": 90,
+    "solution": "kubectl get services --all-namespaces",
+    "explanation": "kubectl get services выводит все Service объекты",
+    "hints": ["kubectl get services", "Флаг --all-namespaces"]
+  },
+  {
+    "id": 34,
+    "category": "kubernetes",
+    "difficulty": "senior",
+    "question": "Показать YAML конфигурацию пода my-app",
+    "time_limit": 120,
+    "solution": "kubectl get pod my-app -o yaml",
+    "explanation": "-o yaml выводит полную конфигурацию объекта в формате YAML",
+    "hints": ["kubectl get", "Флаг -o yaml"]
+  },
+  {
+    "id": 35,
+    "category": "kubernetes",
+    "difficulty": "middle",
+    "question": "Перезапустить deployment my-app (rolling restart)",
+    "time_limit": 120,
+    "solution": "kubectl rollout restart deployment my-app",
+    "explanation": "kubectl rollout restart делает rolling restart: постепенно пересоздаёт поды",
+    "hints": ["kubectl rollout", "Команда restart"]
+  },
+  {
+    "id": 36,
+    "category": "git",
+    "difficulty": "junior",
+    "question": "Клонировать репозиторий с GitHub",
+    "time_limit": 60,
+    "solution": "git clone https://github.com/user/repo.git",
+    "explanation": "git clone скачивает репозиторий по URL",
+    "hints": ["git clone", "Нужен URL репозитория"]
+  },
+  {
+    "id": 37,
+    "category": "git",
+    "difficulty": "junior",
+    "question": "Показать статус изменённых файлов",
+    "time_limit": 60,
+    "solution": "git status",
+    "explanation": "git status показывает состояние рабочей директории и staging area",
+    "hints": ["Команда git status"]
+  },
+  {
+    "id": 38,
+    "category": "git",
+    "difficulty": "junior",
+    "question": "Добавить все изменения в staging",
+    "time_limit": 60,
+    "solution": "git add .",
+    "explanation": "git add . добавляет все изменённые файлы в staging area для коммита",
+    "hints": ["git add", "Точка означает все файлы"]
+  },
+  {
+    "id": 39,
+    "category": "git",
+    "difficulty": "junior",
+    "question": "Создать коммит с сообщением 'Fix bug'",
+    "time_limit": 90,
+    "solution": "git commit -m 'Fix bug'",
+    "explanation": "git commit -m создаёт коммит с указанным сообщением",
+    "hints": ["git commit", "Флаг -m для сообщения"]
+  },
+  {
+    "id": 40,
+    "category": "git",
+    "difficulty": "junior",
+    "question": "Отправить изменения в remote репозиторий",
+    "time_limit": 90,
+    "solution": "git push",
+    "explanation": "git push отправляет коммиты в удалённый репозиторий",
+    "hints": ["Команда git push"]
+  },
+  {
+    "id": 41,
+    "category": "git",
+    "difficulty": "middle",
+    "question": "Создать новую ветку feature/new-feature",
+    "time_limit": 120,
+    "solution": "git checkout -b feature/new-feature",
+    "explanation": "git checkout -b создаёт новую ветку и сразу переключается на неё",
+    "hints": ["git checkout", "Флаг -b для создания"]
+  },
+  {
+    "id": 42,
+    "category": "git",
+    "difficulty": "middle",
+    "question": "Смёржить ветку feature в main",
+    "time_limit": 180,
+    "solution": "git checkout main && git merge feature",
+    "explanation": "Сначала переключаемся на main, затем мёржим feature",
+    "hints": ["Сначала checkout main", "Потом merge"]
+  },
+  {
+    "id": 43,
+    "category": "git",
+    "difficulty": "middle",
+    "question": "Показать историю коммитов в одну строку",
+    "time_limit": 120,
+    "solution": "git log --oneline",
+    "explanation": "git log --oneline показывает каждый коммит в одну строку (хеш + сообщение)",
+    "hints": ["git log", "Флаг --oneline"]
+  },
+  {
+    "id": 44,
+    "category": "git",
+    "difficulty": "senior",
+    "question": "Отменить последний коммит, сохранив изменения",
+    "time_limit": 180,
+    "solution": "git reset --soft HEAD~1",
+    "explanation": "git reset --soft откатывает коммит, но оставляет изменения в staging",
+    "hints": ["git reset", "Флаг --soft", "HEAD~1 = предыдущий коммит"]
+  },
+  {
+    "id": 45,
+    "category": "git",
+    "difficulty": "senior",
+    "question": "Показать разницу между веткой main и feature",
+    "time_limit": 180,
+    "solution": "git diff main..feature",
+    "explanation": "git diff main..feature показывает изменения между двумя ветками",
+    "hints": ["git diff", "Используй .. между ветками"]
+  },
+  {
+    "id": 46,
+    "category": "docker",
+    "difficulty": "junior",
+    "question": "Запустить контейнер из образа nginx",
+    "time_limit": 90,
+    "solution": "docker run -d nginx",
+    "explanation": "docker run запускает контейнер, -d (detached) в фоновом режиме",
+    "hints": ["docker run", "Флаг -d для фона"]
+  },
+  {
+    "id": 47,
+    "category": "docker",
+    "difficulty": "junior",
+    "question": "Показать все запущенные контейнеры",
+    "time_limit": 60,
+    "solution": "docker ps",
+    "explanation": "docker ps показывает список запущенных контейнеров",
+    "hints": ["Команда docker ps"]
+  },
+  {
+    "id": 48,
+    "category": "docker",
+    "difficulty": "middle",
+    "question": "Остановить и удалить все контейнеры",
+    "time_limit": 180,
+    "solution": "docker stop $(docker ps -aq) && docker rm $(docker ps -aq)",
+    "explanation": "docker ps -aq выводит ID всех контейнеров, $() подставляет их в команды stop и rm",
+    "hints": ["docker ps -aq для всех ID", "Комбинируй stop и rm"]
+  },
+  {
+    "id": 49,
+    "category": "docker",
+    "difficulty": "middle",
+    "question": "Построить образ из Dockerfile с тегом my-app:v1",
+    "time_limit": 120,
+    "solution": "docker build -t my-app:v1 .",
+    "explanation": "docker build создаёт образ, -t задаёт тег, точка указывает на текущую директорию с Dockerfile",
+    "hints": ["docker build", "Флаг -t для тега"]
+  },
+  {
+    "id": 50,
+    "category": "docker",
+    "difficulty": "middle",
+    "question": "Посмотреть логи контейнера my-container",
+    "time_limit": 90,
+    "solution": "docker logs my-container",
+    "explanation": "docker logs выводит stdout/stderr контейнера",
+    "hints": ["Команда docker logs"]
+  }
+]
