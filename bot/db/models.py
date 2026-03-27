@@ -97,7 +97,8 @@ class MockSession(Base):
 def get_db_engine():
     """Создаёт engine для БД"""
     db_path = os.getenv('DATABASE_PATH', 'data/devops_bot.db')
-    os.makedirs(os.path.dirname(db_path), exist_ok=True)
+    if db_path != ':memory:' and os.path.dirname(db_path):
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
     return create_engine(f'sqlite:///{db_path}', echo=False)
 
 

@@ -11,6 +11,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Копировать код бота
 COPY bot/ ./bot/
 
+# Копировать тесты
+COPY tests/ ./tests/
+
 # Создать директорию для БД
 RUN mkdir -p /app/data
 
