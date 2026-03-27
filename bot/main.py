@@ -14,6 +14,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
 from aiogram.types import Message
+from aiogram.client.default import DefaultBotProperties
 
 # Импорт handlers
 from .handlers import training, mock_interview
@@ -40,7 +41,7 @@ if not TOKEN:
     sys.exit(1)
 
 # Создать бота и диспетчер
-bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
+bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher()
 
 
