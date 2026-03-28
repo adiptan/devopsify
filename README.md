@@ -129,6 +129,56 @@ devops_interview_bot/
 └── README.md
 ```
 
+## Миграции БД
+
+При обновлении бота миграции запускаются автоматически при старте.
+
+### Ручной запуск миграций
+
+Если нужно применить миграции вручную (например, для существующей БД):
+
+```bash
+# В Docker контейнере
+docker compose exec devops_bot python -m bot.db.migrate
+
+# Локально
+python -m bot.db.migrate
+```
+
+### Проверка схемы БД
+
+```bash
+# Посмотреть структуру таблицы users
+docker compose exec devops_bot sqlite3 /app/data/devops_bot.db "PRAGMA table_info(users);"
+
+# Или локально
+sqlite3 data/devops_bot.db "PRAGMA table_info(users);"
+```
+
+### Откат миграций
+
+⚠️ **Внимание:** SQLite не поддерживает `DROP COLUMN` до версии 3.35.
+
+Если нужно откатить миграцию (удалить колонки `learning_topic`, `learning_card`):
+
+```bash
+# Для SQLite >= 3.35
+docker compose exec devops_bot sqlite3 /app/data/devops_bot.db
+sqlite> ALTER TABLE users DROP COLUMN learning_topic;
+sqlite> ALTER TABLE users DROP COLUMN learning_card;
+sqlite> .quit
+
+# Для старых версий SQLite придётся пересоздать таблицу:
+# 1. Сделать бэкап данных
+# 2. Удалить таблицу users
+# 3. Пересоздать без миграционных колонок
+# 4. Восстановить данные
+```
+
+### История миграций
+
+- **001_add_learning_columns.sql** (2026-03-28) — Добавлены колонки `learning_topic` и `learning_card` для функции карусели карточек
+
 ## Разработка
 
 Разработчик: Nikita (Senior Python Developer)  

@@ -20,7 +20,7 @@ from aiogram.client.default import DefaultBotProperties
 from .handlers import training, mock_interview, learning, settings
 
 # Импорт БД
-from .db.models import init_db, get_session
+from .db import initialize_database, get_session
 from .db.crud import load_tasks_from_json, get_or_create_user
 
 # Импорт планировщика
@@ -113,9 +113,9 @@ async def init_tasks_db():
 
 async def main():
     """Главная функция запуска бота"""
-    # Инициализировать БД
-    logger.info("Initializing database...")
-    init_db()
+    # Инициализировать БД и запустить миграции
+    logger.info("Initializing database and running migrations...")
+    initialize_database()
     
     # Загрузить задачи
     logger.info("Loading tasks...")

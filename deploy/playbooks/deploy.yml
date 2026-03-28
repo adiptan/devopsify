@@ -38,8 +38,26 @@
       args:
         chdir: "{{ project_path }}"
 
-    - name: Start containers
+    - name: Start containers (for migration)
       command: docker compose up -d
+      args:
+        chdir: "{{ project_path }}"
+
+    - name: Run database migrations
+      command: docker compose exec -T devops_bot python -m bot.db.migrate
+      args:
+        chdir: "{{ project_path }}"
+      register: migration_result
+      failed_when: migration_result.rc != 0
+      retries: 3
+      delay: 2
+
+    - name: Show migration result
+      debug:
+        msg: "{{ migration_result.stdout }}"
+
+    - name: Restart containers after migration
+      command: docker compose restart
       args:
         chdir: "{{ project_path }}"
 
