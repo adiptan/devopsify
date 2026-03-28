@@ -1,81 +1,281 @@
 ---
+# DevOps Interview Bot - Deployment Playbook
+# 
+# Улучшенная версия: автоматическая синхронизация кода, миграций, и .env
+# Работает для TEST (sandbox) и PROD (raspi)
+#
+# Usage:
+#   ansible-playbook -i infrastructure/inventory/devops_interview_bot/prod.yml \
+#                    projects/devops_interview_bot/deploy/playbooks/deploy.yml \
+#                    -e "project=devops_interview_bot" -e "branch=main"
+
 - name: Deploy DevOps Interview Bot
-  hosts: sandbox
-  become: yes
+  hosts: all
   vars:
-    project_path: /root/.openclaw/workspace/projects/devops_interview_bot
-    bot_token: "{{ lookup('env', 'DEVOPS_BOT_TOKEN') | default(lookup('file', '/root/.openclaw/workspace/projects/time_counting_bot/.env').split('=')[1], true) }}"
+    # Default values (override via inventory or -e flags)
+    project: "{{ project_config.name | default('devops_interview_bot') }}"
+    project_path: "{{ project_config.path }}"
+    git_repo: "{{ project_config.repo }}"
+    git_branch: "{{ branch | default(project_config.branch) }}"
   
   tasks:
-    - name: Ensure project directory exists
-      file:
-        path: "{{ project_path }}"
-        state: directory
-        mode: '0755'
+    # ========================================
+    # 🔍 PRE-FLIGHT CHECKS
+    # ========================================
+    
+    - name: ✅ Pre-flight checks
+      block:
+        - name: Check if migrations exist locally
+          stat:
+            path: "{{ sync_config.source }}/bot/db/migrations/"
+          register: local_migrations
+          delegate_to: localhost
+          when: env_name == "prod"
+        
+        - name: Fail if migrations missing (PROD only)
+          fail:
+            msg: "❌ Migrations directory not found at {{ sync_config.source }}/bot/db/migrations/ - Cannot deploy!"
+          when:
+            - env_name == "prod"
+            - not local_migrations.stat.exists
+        
+        - name: Check if migrate.py exists locally
+          stat:
+            path: "{{ sync_config.source }}/bot/db/migrate.py"
+          register: local_migrate_script
+          delegate_to: localhost
+          when: env_name == "prod"
+        
+        - name: Fail if migrate.py missing (PROD only)
+          fail:
+            msg: "❌ migrate.py not found at {{ sync_config.source }}/bot/db/migrate.py - Cannot deploy!"
+          when:
+            - env_name == "prod"
+            - not local_migrate_script.stat.exists
+        
+        - name: Check if .env file exists
+          stat:
+            path: "{{ project_config.env_file }}"
+          register: env_file_check
+          delegate_to: localhost
+        
+        - name: Fail if .env file missing
+          fail:
+            msg: "❌ .env file not found at {{ project_config.env_file }} - Cannot deploy!"
+          when: not env_file_check.stat.exists
+        
+        - name: Display pre-flight check results
+          debug:
+            msg:
+              - "✅ Pre-flight checks passed!"
+              - "Environment: {{ env_name }}"
+              - "Project: {{ project }}"
+              - "Branch: {{ git_branch }}"
+              - "Migrations: {{ 'Found' if (env_name == 'prod' and local_migrations.stat.exists) or env_name == 'test' else 'N/A' }}"
+              - "Migrate script: {{ 'Found' if (env_name == 'prod' and local_migrate_script.stat.exists) or env_name == 'test' else 'N/A' }}"
+              - ".env file: Found"
 
-    - name: Copy .env file with bot token
-      copy:
-        content: "BOT_TOKEN={{ bot_token }}\n"
-        dest: "{{ project_path }}/.env"
-        mode: '0600'
+    # ========================================
+    # 📦 CODE SYNCHRONIZATION (PROD only)
+    # ========================================
+    
+    - name: 📦 Sync code from sandbox to PROD
+      block:
+        - name: Display sync info
+          debug:
+            msg:
+              - "Starting code synchronization..."
+              - "Source: {{ sync_config.source }}"
+              - "Destination: {{ ansible_user }}@{{ ansible_host }}:{{ project_path }}/"
+        
+        - name: Ensure remote project directory exists
+          file:
+            path: "{{ project_path }}"
+            state: directory
+            mode: '0755'
+        
+        - name: Sync code via rsync
+          synchronize:
+            src: "{{ sync_config.source }}"
+            dest: "{{ project_path }}/"
+            delete: yes
+            rsync_opts:
+              - "--exclude={{ item }}"
+          loop: "{{ sync_config.exclude }}"
+          register: sync_result
+        
+        - name: Display sync result
+          debug:
+            msg: "✅ Code synchronized successfully"
+      
+      when: env_name == "prod"
 
-    - name: Pull latest code from Git
-      git:
-        repo: https://github.com/kotivproduction/devops_interview_bot.git
-        dest: "{{ project_path }}"
-        version: main
-        force: yes
-      ignore_errors: yes  # На случай если репо ещё не создан
+    # ========================================
+    # 🔧 SETUP PROJECT ENVIRONMENT
+    # ========================================
+    
+    - name: 🔧 Setup project environment
+      block:
+        - name: Ensure project directory exists (TEST)
+          file:
+            path: "{{ project_path }}"
+            state: directory
+            mode: '0755'
+          when: env_name == "test"
 
-    - name: Stop existing containers
-      command: docker compose down
-      args:
-        chdir: "{{ project_path }}"
-      ignore_errors: yes
+        - name: Copy .env file
+          copy:
+            src: "{{ project_config.env_file }}"
+            dest: "{{ project_path }}/.env"
+            mode: '0600'
+            backup: yes
+        
+        - name: Verify .env file copied
+          stat:
+            path: "{{ project_path }}/.env"
+          register: env_file_deployed
+        
+        - name: Fail if .env not deployed
+          fail:
+            msg: "❌ .env file failed to copy to {{ project_path }}/.env"
+          when: not env_file_deployed.stat.exists
+        
+        - name: Display environment setup result
+          debug:
+            msg: "✅ .env file deployed successfully"
 
-    - name: Build Docker image
-      command: docker compose build
-      args:
-        chdir: "{{ project_path }}"
+    # ========================================
+    # 🔍 VERIFY MIGRATIONS ON TARGET
+    # ========================================
+    
+    - name: 🔍 Verify migrations on target
+      block:
+        - name: Check migrations directory on target
+          stat:
+            path: "{{ project_path }}/bot/db/migrations/"
+          register: target_migrations_dir
+        
+        - name: List migrations on target
+          shell: |
+            ls -la {{ project_path }}/bot/db/migrations/
+          register: target_migrations_list
+          when: target_migrations_dir.stat.exists
+        
+        - name: Display migrations on target
+          debug:
+            msg: "{{ target_migrations_list.stdout_lines }}"
+          when: target_migrations_dir.stat.exists
+        
+        - name: Check migrate.py on target
+          stat:
+            path: "{{ project_path }}/bot/db/migrate.py"
+          register: target_migrate_script
+        
+        - name: Display migrate.py status
+          debug:
+            msg: "✅ migrate.py {{ 'exists' if target_migrate_script.stat.exists else 'MISSING' }} on target"
 
-    - name: Start containers (for migration)
-      command: docker compose up -d
-      args:
-        chdir: "{{ project_path }}"
+    # ========================================
+    # 🐳 DOCKER BUILD & DEPLOY
+    # ========================================
+    
+    - name: 🐳 Build and deploy Docker containers
+      block:
+        - name: Stop existing containers
+          command: docker compose down
+          args:
+            chdir: "{{ project_path }}"
+          ignore_errors: yes
 
-    - name: Run database migrations
-      command: docker compose exec -T devops_bot python -m bot.db.migrate
-      args:
-        chdir: "{{ project_path }}"
-      register: migration_result
-      failed_when: migration_result.rc != 0
-      retries: 3
-      delay: 2
+        - name: Build Docker image
+          command: docker compose build
+          args:
+            chdir: "{{ project_path }}"
+          register: build_result
 
-    - name: Show migration result
+        - name: Display build result
+          debug:
+            msg: "{{ build_result.stdout_lines }}"
+
+        - name: Start containers
+          command: docker compose up -d
+          args:
+            chdir: "{{ project_path }}"
+
+    # ========================================
+    # 📊 DATABASE MIGRATIONS
+    # ========================================
+    
+    - name: 📊 Run database migrations
+      block:
+        - name: Wait for container to start (5 sec)
+          pause:
+            seconds: 5
+
+        - name: Run migrations
+          command: docker compose exec -T devops_bot python -m bot.db.migrate
+          args:
+            chdir: "{{ project_path }}"
+          register: migration_result
+          failed_when: migration_result.rc != 0
+          retries: 3
+          delay: 2
+
+        - name: Display migration result
+          debug:
+            msg: "{{ migration_result.stdout_lines }}"
+
+    # ========================================
+    # ✅ HEALTH CHECKS
+    # ========================================
+    
+    - name: ✅ Health checks
+      block:
+        - name: Restart containers after migration
+          command: docker compose restart
+          args:
+            chdir: "{{ project_path }}"
+
+        - name: Wait for containers to be healthy
+          command: docker compose ps
+          args:
+            chdir: "{{ project_path }}"
+          register: container_status
+          retries: 5
+          delay: 3
+          until: "'running' in container_status.stdout or 'Up' in container_status.stdout"
+
+        - name: Display container status
+          debug:
+            msg: "{{ container_status.stdout_lines }}"
+
+        - name: Show recent logs
+          command: docker compose logs --tail=20
+          args:
+            chdir: "{{ project_path }}"
+          register: logs
+
+        - name: Display logs
+          debug:
+            msg: "{{ logs.stdout_lines }}"
+
+    # ========================================
+    # 🎉 DEPLOYMENT SUMMARY
+    # ========================================
+    
+    - name: 🎉 Deployment summary
       debug:
-        msg: "{{ migration_result.stdout }}"
-
-    - name: Restart containers after migration
-      command: docker compose restart
-      args:
-        chdir: "{{ project_path }}"
-
-    - name: Wait for container to be healthy
-      command: docker compose ps
-      args:
-        chdir: "{{ project_path }}"
-      register: container_status
-      retries: 5
-      delay: 3
-      until: "'running' in container_status.stdout"
-
-    - name: Show container logs
-      command: docker compose logs --tail=20
-      args:
-        chdir: "{{ project_path }}"
-      register: logs
-
-    - name: Print logs
-      debug:
-        msg: "{{ logs.stdout_lines }}"
+        msg:
+          - "========================================"
+          - "✅ Deployment completed successfully!"
+          - "========================================"
+          - "Environment: {{ env_name }}"
+          - "Project: {{ project }}"
+          - "Branch: {{ git_branch }}"
+          - "Path: {{ project_path }}"
+          - "Host: {{ ansible_host | default('localhost') }}"
+          - "========================================"
+          - "Next steps:"
+          - "- Check logs: docker compose logs -f"
+          - "- Test bot: Send /start to @devops_interview_bot"
+          - "========================================"
