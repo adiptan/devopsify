@@ -1,0 +1,637 @@
+{
+  "nginx": {
+    "title": "Nginx",
+    "cards": [
+      {
+        "id": 1,
+        "title": "Что такое Nginx",
+        "content": "Nginx — это высокопроизводительный HTTP-сервер и reverse proxy сервер, который также может работать как почтовый прокси. Созданный Игорем Сысоевым в 2002 году, Nginx быстро стал одним из самых популярных веб-серверов в мире благодаря своей производительности и низкому потреблению ресурсов.\n\nNginx использует асинхронную событийно-ориентированную архитектуру, которая позволяет обрабатывать тысячи одновременных соединений с минимальными затратами памяти. В отличие от Apache, который создаёт новый процесс или поток для каждого соединения, Nginx использует один рабочий процесс для множества соединений.\n\nОсновные применения: веб-сервер для статических файлов, reverse proxy перед приложениями (например, Node.js, Python), балансировщик нагрузки, SSL/TLS терминатор, HTTP-кеш.",
+        "example": "# Установка на Ubuntu/Debian\nsudo apt update\nsudo apt install nginx\n\n# Проверка статуса\nsudo systemctl status nginx\n\n# Запуск/остановка\nsudo systemctl start nginx\nsudo systemctl stop nginx",
+        "key_points": [
+          "Асинхронная архитектура — обрабатывает много соединений малыми ресурсами",
+          "Reverse proxy — прокладка между клиентами и backend-серверами",
+          "Балансировщик нагрузки — распределяет трафик по нескольким серверам"
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Установка и первый запуск",
+        "content": "Установка Nginx на Linux-системы выполняется через пакетный менеджер. Для Ubuntu/Debian используется apt, для CentOS/RHEL — yum или dnf. После установки Nginx автоматически запускается как systemd-сервис.\n\nПосле установки основной конфигурационный файл находится в /etc/nginx/nginx.conf, а файлы виртуальных хостов — в /etc/nginx/sites-available/ (Ubuntu) или /etc/nginx/conf.d/ (CentOS). По умолчанию Nginx слушает порт 80 и отдаёт страницу приветствия.\n\nВажные директории: /var/log/nginx/ — логи (access.log и error.log), /usr/share/nginx/html/ — дефолтный корень сайта, /etc/nginx/sites-enabled/ — активные конфигурации (симлинки).",
+        "example": "# Установка\nsudo apt install nginx\n\n# Включить автозапуск\nsudo systemctl enable nginx\n\n# Проверить конфигурацию\nsudo nginx -t\n\n# Перезагрузить конфигурацию\nsudo nginx -s reload\n\n# Посмотреть версию\nnginx -v",
+        "key_points": [
+          "systemctl — управление сервисом (start, stop, restart, status)",
+          "nginx -t — проверка синтаксиса конфигурации перед применением",
+          "nginx -s reload — применить изменения без даунтайма"
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Структура nginx.conf",
+        "content": "Конфигурация Nginx состоит из директив, организованных в блоки (контексты). Главный файл nginx.conf содержит глобальные настройки и подключает дополнительные конфигурации через директиву include.\n\nОсновные блоки: events {} — настройки обработки соединений (worker_connections), http {} — HTTP-сервер (здесь живут server-блоки), server {} — виртуальный хост (один сайт), location {} — правила обработки конкретных URL.\n\nПорядок обработки: Nginx читает nginx.conf → подключает файлы из include → парсит server-блоки → при запросе ищет подходящий server_name → затем ищет подходящий location. Важно: директивы наследуются от родительских блоков, но могут быть переопределены.",
+        "example": "# /etc/nginx/nginx.conf (упрощённо)\nuser www-data;\nworker_processes auto;\n\nevents {\n    worker_connections 1024;\n}\n\nhttp {\n    include /etc/nginx/mime.types;\n    include /etc/nginx/sites-enabled/*;\n    \n    access_log /var/log/nginx/access.log;\n    error_log /var/log/nginx/error.log;\n}",
+        "key_points": [
+          "worker_processes auto — Nginx сам выберет кол-во процессов (обычно = кол-ву CPU)",
+          "worker_connections — макс. соединений на 1 процесс",
+          "include — подключение дополнительных конфигов (модульность)"
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Access logs: формат и анализ",
+        "content": "Access logs записывают каждый HTTP-запрос к серверу: IP клиента, время запроса, URL, статус ответа, размер, user-agent и referrer. По умолчанию логи пишутся в /var/log/nginx/access.log в формате combined.\n\nФормат лога настраивается директивой log_format. Стандартный формат: IP - user [timestamp] \"METHOD /path HTTP/1.1\" status size \"referrer\" \"user-agent\". Пример: 192.168.1.100 - - [28/Mar/2026:10:00:00 +0000] \"GET /api/users HTTP/1.1\" 200 1024 \"-\" \"curl/7.68.0\".\n\nАнализ логов: используй grep для поиска по статусу (grep '\" 404' access.log), awk для подсчёта запросов по IP (awk '{print $1}' | sort | uniq -c), или специализированные инструменты (goaccess, awstats).",
+        "example": "# Посмотреть последние 10 запросов\ntail -n 10 /var/log/nginx/access.log\n\n# Найти все 404 ошибки\ngrep '\" 404' /var/log/nginx/access.log\n\n# Топ-10 IP по количеству запросов\nawk '{print $1}' access.log | sort | uniq -c | sort -rn | head -10\n\n# Запросы за последнюю минуту\ntail -f /var/log/nginx/access.log | grep $(date +\"%d/%b/%Y:%H:%M\")",
+        "key_points": [
+          "Формат combined — стандартный, включает referrer и user-agent",
+          "Ротация логов — logrotate автоматически архивирует старые логи",
+          "Real-time мониторинг — tail -f для отслеживания запросов в реальном времени"
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Error logs: отладка проблем",
+        "content": "Error logs содержат ошибки Nginx: проблемы конфигурации, ошибки upstream-серверов, отказы соединений, превышение лимитов. Уровни логирования: debug, info, notice, warn, error, crit, alert, emerg. По умолчанию используется error.\n\nТипичные ошибки: \"Connection refused\" — backend-сервер недоступен, \"No such file or directory\" — путь к файлу неверен, \"403 Forbidden\" — нет прав на чтение файла, \"502 Bad Gateway\" — upstream не отвечает или вернул некорректный ответ.\n\nОтладка: установи уровень debug для детального логирования (error_log /var/log/nginx/error.log debug;), но не используй на продакшене — слишком много записей. После отладки верни уровень на error или warn.",
+        "example": "# Посмотреть последние ошибки\ntail -n 20 /var/log/nginx/error.log\n\n# Отфильтровать критичные ошибки\ngrep 'crit\\|alert\\|emerg' /var/log/nginx/error.log\n\n# Включить debug-логирование (временно!)\nerror_log /var/log/nginx/error.log debug;\n\n# Мониторинг ошибок в реальном времени\ntail -f /var/log/nginx/error.log",
+        "key_points": [
+          "error.log — главный источник информации при траблшутинге",
+          "502 Bad Gateway — чаще всего проблема с backend-приложением",
+          "Уровень debug — только для отладки, не для продакшена"
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Виртуальные хосты (server blocks)",
+        "content": "Виртуальные хосты позволяют одному Nginx обслуживать несколько доменов. Каждый домен описывается в отдельном server {} блоке. Nginx выбирает нужный блок по заголовку Host из HTTP-запроса.\n\nОсновные директивы: listen — порт (80, 443), server_name — домены (example.com, www.example.com), root — корневая директория сайта, index — файлы по умолчанию (index.html, index.php).\n\nПрактика: создай файл в /etc/nginx/sites-available/mysite.conf, затем создай симлинк в /etc/nginx/sites-enabled/ и перезагрузи Nginx. Один Nginx может обслуживать сотни доменов — проверка server_name очень быстрая.",
+        "example": "# /etc/nginx/sites-available/example.com\nserver {\n    listen 80;\n    server_name example.com www.example.com;\n    root /var/www/example.com;\n    index index.html;\n    \n    location / {\n        try_files $uri $uri/ =404;\n    }\n}\n\n# Активировать конфиг\nsudo ln -s /etc/nginx/sites-available/example.com /etc/nginx/sites-enabled/\nsudo nginx -t\nsudo systemctl reload nginx",
+        "key_points": [
+          "server_name — можно указать несколько доменов через пробел",
+          "try_files — проверяет наличие файла, затем директории, затем возвращает 404",
+          "sites-enabled — симлинки на активные конфиги из sites-available"
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Reverse proxy: проксирование на backend",
+        "content": "Reverse proxy — Nginx принимает запросы от клиентов и пересылает их на backend-серверы (Node.js, Python, Java). Клиент думает, что общается напрямую с Nginx, но на самом деле запрос идёт дальше.\n\nПреимущества: SSL-терминация (Nginx обрабатывает HTTPS, backend работает по HTTP), кеширование ответов, балансировка нагрузки, защита от DDoS, единая точка входа для микросервисов.\n\nНастройка: используй директиву proxy_pass внутри location {}. Важно: передавай заголовки Host, X-Real-IP, X-Forwarded-For — иначе backend не узнает реальный IP клиента и домен.",
+        "example": "server {\n    listen 80;\n    server_name api.example.com;\n    \n    location / {\n        proxy_pass http://localhost:3000;\n        proxy_set_header Host $host;\n        proxy_set_header X-Real-IP $remote_addr;\n        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n        proxy_set_header X-Forwarded-Proto $scheme;\n    }\n}",
+        "key_points": [
+          "proxy_pass — адрес backend-сервера (может быть upstream-блок)",
+          "X-Real-IP — передаёт реальный IP клиента на backend",
+          "X-Forwarded-Proto — сообщает backend, был ли запрос по HTTP или HTTPS"
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Load balancing: распределение нагрузки",
+        "content": "Load balancing распределяет входящие запросы между несколькими backend-серверами. Nginx поддерживает несколько алгоритмов: round-robin (по кругу), least_conn (на сервер с меньшим числом активных соединений), ip_hash (один клиент всегда идёт на один сервер).\n\nНастройка: создай upstream-блок с перечислением серверов, затем используй его имя в proxy_pass. Nginx автоматически исключает упавшие серверы (health checks) и перенаправляет трафик на живые.\n\nПродвинутые настройки: weight (вес сервера), max_fails (сколько раз попробовать до исключения), fail_timeout (на сколько исключить сервер), backup (резервный сервер).",
+        "example": "upstream backend {\n    least_conn;\n    server 192.168.1.10:3000 weight=3;\n    server 192.168.1.11:3000 weight=2;\n    server 192.168.1.12:3000 backup;\n}\n\nserver {\n    listen 80;\n    location / {\n        proxy_pass http://backend;\n    }\n}",
+        "key_points": [
+          "upstream — именованная группа backend-серверов",
+          "least_conn — отправляет запрос на сервер с наименьшей нагрузкой",
+          "backup — сервер используется только если основные упали"
+        ]
+      },
+      {
+        "id": 9,
+        "title": "SSL/TLS: настройка HTTPS",
+        "content": "SSL/TLS шифрует трафик между клиентом и сервером, защищая данные от перехвата. Для настройки HTTPS в Nginx нужен SSL-сертификат (от Let's Encrypt бесплатно) и приватный ключ.\n\nНастройка: listen 443 ssl, указать пути к сертификату (ssl_certificate) и ключу (ssl_certificate_key). Рекомендуется отключить старые протоколы (SSLv3, TLS 1.0) и слабые шифры — используй современные настройки (TLS 1.2+, AES256).\n\nПеренаправление HTTP → HTTPS: создай отдельный server-блок на порту 80, который делает return 301 на https://$host$request_uri. Это обязательная практика для безопасности.",
+        "example": "server {\n    listen 443 ssl;\n    server_name example.com;\n    \n    ssl_certificate /etc/letsencrypt/live/example.com/fullchain.pem;\n    ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;\n    ssl_protocols TLSv1.2 TLSv1.3;\n    ssl_ciphers HIGH:!aNULL:!MD5;\n    \n    location / {\n        root /var/www/example.com;\n    }\n}\n\n# Редирект HTTP → HTTPS\nserver {\n    listen 80;\n    server_name example.com;\n    return 301 https://$host$request_uri;\n}",
+        "key_points": [
+          "Let's Encrypt — бесплатные SSL-сертификаты с автопродлением (certbot)",
+          "ssl_protocols TLSv1.2 TLSv1.3 — отключаем устаревшие протоколы",
+          "return 301 — постоянный редирект для SEO"
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Best practices: безопасность и оптимизация",
+        "content": "Best practices для Nginx включают: ротацию логов (logrotate), ограничение размера запросов (client_max_body_size), таймауты (client_body_timeout, send_timeout), скрытие версии Nginx (server_tokens off), защиту от DDoS (limit_req, limit_conn).\n\nБезопасность: отключи дефолтный сервер, настрой fail2ban для блокировки атак по логам, используй CSP (Content-Security-Policy) заголовки, добавь HSTS (Strict-Transport-Security) для принудительного HTTPS.\n\nОптимизация: включи gzip-сжатие (gzip on), настрой кеширование статики (expires, Cache-Control), используй HTTP/2 (listen 443 ssl http2), включи keepalive-соединения для переиспользования TCP-подключений.",
+        "example": "# Безопасность\nserver_tokens off;\nclient_max_body_size 10M;\n\n# Ограничение запросов (DDoS защита)\nlimit_req_zone $binary_remote_addr zone=mylimit:10m rate=10r/s;\nlocation / {\n    limit_req zone=mylimit burst=20;\n}\n\n# Gzip-сжатие\ngzip on;\ngzip_types text/plain text/css application/json;\n\n# HTTP/2\nlisten 443 ssl http2;",
+        "key_points": [
+          "server_tokens off — скрывает версию Nginx (меньше инфы для атакующих)",
+          "limit_req — ограничивает кол-во запросов с одного IP (защита от флуда)",
+          "HTTP/2 — быстрее HTTP/1.1, поддержка мультиплексирования"
+        ]
+      }
+    ],
+    "tasks": [1, 2, 3]
+  },
+  "bash": {
+    "title": "Bash Scripting",
+    "cards": [
+      {
+        "id": 1,
+        "title": "Зачем DevOps'у нужен Bash",
+        "content": "Bash (Bourne Again Shell) — это язык командной оболочки и скриптов в Linux/Unix системах. Для DevOps-инженера Bash — основной инструмент автоматизации: развёртывание серверов, мониторинг, резервное копирование, обработка логов.\n\nПреимущества Bash: доступен везде (любой Linux имеет bash из коробки), быстрое прототипирование, интеграция с системными утилитами (grep, awk, sed), управление процессами и файлами.\n\nКогда использовать Bash: простые задачи автоматизации, CI/CD пайплайны, cron-задачи, обёртки над другими инструментами. Когда НЕ использовать: сложная бизнес-логика (лучше Python), работа с API (curl/jq работают, но неудобно).",
+        "example": "#!/bin/bash\n# Простой скрипт для проверки дискового пространства\n\nthreshold=80\nusage=$(df / | tail -1 | awk '{print $5}' | sed 's/%//')\n\nif [ $usage -gt $threshold ]; then\n    echo \"WARNING: Disk usage is ${usage}%\"\n    # Отправить алерт\nfi",
+        "key_points": [
+          "Shebang #!/bin/bash — указывает интерпретатор для скрипта",
+          "Bash везде — работает на любом Linux без установки",
+          "Автоматизация — основная цель Bash в DevOps"
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Основные команды: навигация",
+        "content": "Навигация по файловой системе — первое, что нужно освоить в командной строке. pwd (print working directory) показывает текущую директорию, cd (change directory) переходит в другую директорию, ls (list) отображает содержимое директории.\n\nПути бывают абсолютные (начинаются с /) и относительные (относительно текущей директории). Специальные обозначения: . (текущая директория), .. (родительская директория), ~ (домашняя директория пользователя), - (предыдущая директория).\n\nПолезные опции ls: -l (подробный список с правами), -a (показать скрытые файлы), -h (человеко-читаемые размеры), -t (сортировка по времени изменения).",
+        "example": "# Показать текущую директорию\npwd\n# Вывод: /home/user/projects\n\n# Перейти в другую директорию\ncd /var/log\ncd ~/documents\ncd ..  # на уровень вверх\ncd -   # вернуться в предыдущую директорию\n\n# Список файлов\nls -lah\n# -l: подробно, -a: со скрытыми, -h: размеры в KB/MB",
+        "key_points": [
+          "pwd — где я сейчас нахожусь",
+          "cd .. — подняться на уровень вверх",
+          "ls -lah — самая используемая комбинация флагов"
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Работа с файлами: cat, less, head, tail",
+        "content": "Просмотр содержимого файлов — ежедневная задача DevOps. cat (concatenate) выводит весь файл, less позволяет листать большие файлы, head показывает первые строки, tail — последние.\n\ncat полезен для быстрого просмотра коротких файлов или объединения нескольких файлов. less лучше для больших логов (навигация: Space — страница вниз, b — вверх, / — поиск, q — выход).\n\ntail -f — must-have для мониторинга логов в реальном времени. Добавь -n для указания количества строк (tail -n 100 file.log).",
+        "example": "# Показать весь файл\ncat /etc/passwd\n\n# Объединить файлы\ncat file1.txt file2.txt > combined.txt\n\n# Просмотр большого файла (с прокруткой)\nless /var/log/syslog\n\n# Первые 10 строк\nhead /var/log/nginx/access.log\n\n# Последние 20 строк\ntail -n 20 /var/log/nginx/error.log\n\n# Мониторинг лога в реальном времени\ntail -f /var/log/application.log",
+        "key_points": [
+          "cat — для коротких файлов, less — для длинных",
+          "tail -f — следить за логами (новые строки показываются сразу)",
+          "head/tail -n N — показать N строк с начала/конца"
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Поиск файлов: find и locate",
+        "content": "find — мощная утилита для поиска файлов по различным критериям: имя, размер, дата изменения, права доступа. find работает в реальном времени, обходя файловую систему.\n\nlocate — быстрее find, но использует индекс (база обновляется командой updatedb). locate не найдёт только что созданные файлы, зато мгновенно ищет по всей системе.\n\nПримеры критериев find: -name (имя файла), -type f (только файлы), -type d (только директории), -size +100M (размер больше 100MB), -mtime -7 (изменён за последние 7 дней), -exec (выполнить команду для каждого найденного файла).",
+        "example": "# Найти все .log файлы в /var/log\nfind /var/log -name \"*.log\"\n\n# Найти файлы больше 100MB\nfind /home -type f -size +100M\n\n# Найти и удалить старые логи (старше 30 дней)\nfind /var/log -name \"*.log\" -mtime +30 -exec rm {} \\;\n\n# Быстрый поиск по имени (через индекс)\nlocate nginx.conf\n\n# Обновить индекс locate\nsudo updatedb",
+        "key_points": [
+          "find — поиск в реальном времени с гибкими фильтрами",
+          "locate — быстро, но нужен обновлённый индекс (updatedb)",
+          "-exec — выполнить команду для каждого найденного файла"
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Grep: поиск по содержимому",
+        "content": "grep (Global Regular Expression Print) — поиск строк в файлах по шаблону. Один из самых используемых инструментов DevOps для анализа логов и конфигурационных файлов.\n\nОсновные опции: -i (игнорировать регистр), -r (рекурсивный поиск по директориям), -n (показать номера строк), -v (инвертировать — показать строки БЕЗ шаблона), -c (подсчитать количество совпадений), -A N (показать N строк после совпадения), -B N (до), -C N (вокруг).\n\ngrep поддерживает регулярные выражения: ^ (начало строки), $ (конец), . (любой символ), * (0 или более повторений), [abc] (один из символов).",
+        "example": "# Найти все строки с ERROR в логе\ngrep \"ERROR\" /var/log/application.log\n\n# Поиск без учёта регистра\ngrep -i \"error\" /var/log/application.log\n\n# Рекурсивный поиск в директории\ngrep -r \"password\" /etc/nginx/\n\n# Показать 3 строки после совпадения\ngrep -A 3 \"Exception\" app.log\n\n# Исключить строки с pattern\ngrep -v \"DEBUG\" app.log\n\n# Подсчитать количество ошибок\ngrep -c \"ERROR\" app.log",
+        "key_points": [
+          "grep — первый инструмент для анализа логов",
+          "-r — рекурсивный поиск по всем файлам в директории",
+          "-A/-B/-C — показать контекст вокруг найденной строки"
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Awk: обработка табличных данных",
+        "content": "awk — язык обработки текста, идеально подходит для работы с колоночными данными (логи, CSV, вывод команд). awk разбивает каждую строку на поля (по умолчанию по пробелам) и позволяет обрабатывать их.\n\nПеременные: $1, $2, $3 — первое, второе, третье поле; $0 — вся строка; NF — количество полей; NR — номер строки. FS — разделитель полей (по умолчанию пробел).\n\nawk поддерживает условия, циклы, ассоциативные массивы. Типичное применение: извлечение колонок, фильтрация строк, суммирование, подсчёт уникальных значений.",
+        "example": "# Вывести 1-ю и 3-ю колонку\nawk '{print $1, $3}' file.txt\n\n# Вывести строки где 3-я колонка > 100\nawk '$3 > 100' file.txt\n\n# Сумма чисел в 2-й колонке\nawk '{sum += $2} END {print sum}' file.txt\n\n# Топ IP из access.log\nawk '{print $1}' access.log | sort | uniq -c | sort -rn | head -10\n\n# Использовать другой разделитель\nawk -F: '{print $1}' /etc/passwd  # имена пользователей",
+        "key_points": [
+          "$1, $2, $3 — первое, второе, третье поле в строке",
+          "awk '{sum += $N}' — суммирование значений колонки",
+          "-F — задать разделитель полей (например, : для /etc/passwd)"
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Sed: потоковый редактор",
+        "content": "sed (Stream Editor) — редактирование текста в потоке. Основное применение: замена текста, удаление строк, вставка текста. sed обрабатывает файлы построчно, не загружая их целиком в память — идеально для больших файлов.\n\nОсновные команды: s/pattern/replacement/ (замена), d (удаление строки), p (печать строки), i (вставка перед), a (вставка после). Флаг g — замена всех вхождений в строке (не только первого).\n\nОпции: -i (редактировать файл на месте), -n (не выводить строки автоматически, только с командой p), -e (несколько команд).",
+        "example": "# Заменить первое вхождение в каждой строке\nsed 's/error/ERROR/' file.txt\n\n# Заменить все вхождения\nsed 's/error/ERROR/g' file.txt\n\n# Редактировать файл на месте\nsed -i 's/localhost/127.0.0.1/g' config.txt\n\n# Удалить строки содержащие pattern\nsed '/DEBUG/d' app.log\n\n# Показать только строки с pattern\nsed -n '/ERROR/p' app.log\n\n# Удалить пустые строки\nsed '/^$/d' file.txt",
+        "key_points": [
+          "s/old/new/g — замена всех вхождений в строке",
+          "-i — редактирование файла на месте (будь осторожен!)",
+          "/pattern/d — удалить строки содержащие pattern"
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Pipes и перенаправление",
+        "content": "Pipes (|) и перенаправление (>, >>, <) — основа композиции команд в Bash. Pipe передаёт вывод одной команды на вход другой, позволяя строить цепочки обработки данных.\n\nПеренаправление: > (перезаписать файл), >> (добавить в конец), < (читать из файла), 2> (перенаправить stderr), 2>&1 (stderr в stdout), &> (stdout и stderr в файл).\n\nКомбинации: команда1 | команда2 | команда3 — данные проходят через цепочку преобразований. Пример: cat log | grep ERROR | awk '{print $1}' | sort | uniq -c — извлечь и подсчитать уникальные IP с ошибками.",
+        "example": "# Pipe: передать вывод следующей команде\ncat /var/log/nginx/access.log | grep \"404\" | wc -l\n\n# Перенаправление в файл (перезапись)\necho \"Hello\" > output.txt\n\n# Добавление в файл\necho \"World\" >> output.txt\n\n# Перенаправить ошибки в файл\ncommand 2> errors.log\n\n# Перенаправить всё (stdout + stderr)\ncommand &> all_output.log\n\n# Цепочка обработки\nps aux | grep nginx | awk '{print $2}' | xargs kill",
+        "key_points": [
+          "| (pipe) — вывод одной команды → ввод другой",
+          "> — перезаписать файл, >> — добавить в конец",
+          "2>&1 — объединить stderr и stdout (для логирования)"
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Переменные и окружение",
+        "content": "Переменные в Bash хранят данные: строки, числа, пути. Объявление: VAR=value (без пробелов!). Использование: $VAR или ${VAR}. Переменные видны только в текущей оболочке, если не экспортированы.\n\nexport делает переменную доступной дочерним процессам. Переменные окружения (environment variables): PATH (пути к исполняемым файлам), HOME (домашняя директория), USER (имя пользователя), SHELL (оболочка).\n\nenv показывает все переменные окружения. unset удаляет переменную. Кавычки: \"$VAR\" — интерполяция (подставит значение), '$VAR' — литерал (выведет $VAR как есть).",
+        "example": "# Объявить переменную\nname=\"Alice\"\necho \"Hello, $name\"\n\n# Экспортировать (доступна в дочерних процессах)\nexport DATABASE_URL=\"postgres://localhost/mydb\"\n\n# Использовать переменную окружения\necho $HOME\necho $PATH\n\n# Подстановка команды в переменную\ncurrent_date=$(date +%Y-%m-%d)\necho \"Today is $current_date\"\n\n# Значение по умолчанию\necho ${VAR:-default_value}",
+        "key_points": [
+          "VAR=value — объявление, $VAR — использование",
+          "export — сделать переменную видимой для дочерних процессов",
+          "\"$VAR\" — интерполяция, '$VAR' — литерал"
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Условия: if, case",
+        "content": "Условные конструкции позволяют выполнять код в зависимости от условий. if проверяет условие, case — множественный выбор (аналог switch).\n\nСинтаксис if: if [ condition ]; then ... elif [ condition ]; then ... else ... fi. Проверки: -f (файл существует), -d (директория), -z (строка пустая), -n (строка не пустая), = (равенство строк), -eq/-ne/-gt/-lt (числовые сравнения).\n\ncase удобен для обработки опций: case $var in pattern1) ... ;; pattern2) ... ;; esac. Паттерны могут включать * и |.",
+        "example": "# if-else\nif [ -f \"/etc/nginx/nginx.conf\" ]; then\n    echo \"Nginx config exists\"\nelse\n    echo \"Config not found\"\nfi\n\n# Числовое сравнение\nif [ $usage -gt 80 ]; then\n    echo \"Disk usage critical!\"\nfi\n\n# case (множественный выбор)\ncase $1 in\n    start)\n        echo \"Starting service...\"\n        ;;\n    stop)\n        echo \"Stopping service...\"\n        ;;\n    *)\n        echo \"Usage: $0 {start|stop}\"\n        ;;\nesac",
+        "key_points": [
+          "[ condition ] — проверка условия (пробелы обязательны!)",
+          "-f, -d, -z — проверки файлов, директорий, строк",
+          "case — удобен для обработки аргументов скрипта"
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Циклы: for, while",
+        "content": "Циклы позволяют повторять действия. for итерирует по списку значений, while выполняется пока условие истинно.\n\nfor item in list; do ... done — list может быть явным (1 2 3), диапазоном ({1..10}), результатом команды ($(ls)), glob-паттерном (*.txt).\n\nwhile [ condition ]; do ... done — выполняется пока условие истинно. Часто используется для чтения файлов построчно: while IFS= read -r line; do ... done < file.",
+        "example": "# for: итерация по списку\nfor host in server1 server2 server3; do\n    ssh $host \"uptime\"\ndone\n\n# for: диапазон\nfor i in {1..5}; do\n    echo \"Iteration $i\"\ndone\n\n# for: файлы\nfor file in *.log; do\n    gzip \"$file\"\ndone\n\n# while: чтение файла построчно\nwhile IFS= read -r line; do\n    echo \"Line: $line\"\ndone < input.txt\n\n# while: бесконечный цикл (с условием выхода)\nwhile true; do\n    check_service\n    sleep 60\ndone",
+        "key_points": [
+          "for — итерация по известному списку",
+          "while — выполнение пока условие истинно",
+          "{1..10} — диапазон в for (не работает в старых версиях)"
+        ]
+      },
+      {
+        "id": 12,
+        "title": "Функции",
+        "content": "Функции в Bash позволяют переиспользовать код. Объявление: function_name() { commands; } или function function_name { commands; }.\n\nАргументы: $1, $2, $3 — первый, второй, третий аргумент; $@ — все аргументы; $# — количество аргументов. Функции возвращают код выхода через return (0 = успех, не-0 = ошибка). Для возврата значений используй echo.\n\nВызов функции: просто напиши её имя и аргументы (function_name arg1 arg2). Переменные внутри функции по умолчанию глобальные, используй local для локальных.",
+        "example": "# Объявление функции\nbackup_files() {\n    local source=$1\n    local dest=$2\n    echo \"Backing up $source to $dest...\"\n    tar -czf \"$dest/backup-$(date +%Y%m%d).tar.gz\" \"$source\"\n}\n\n# Вызов функции\nbackup_files \"/var/www\" \"/backups\"\n\n# Функция с возвратом значения\nget_disk_usage() {\n    df / | tail -1 | awk '{print $5}' | sed 's/%//'\n}\n\nusage=$(get_disk_usage)\necho \"Disk usage: ${usage}%\"",
+        "key_points": [
+          "function_name() { ... } — объявление функции",
+          "$1, $2, ... — аргументы функции",
+          "local — локальная переменная (не влияет на внешний скоуп)"
+        ]
+      },
+      {
+        "id": 13,
+        "title": "Обработка ошибок: set -e, trap",
+        "content": "По умолчанию Bash продолжает выполнение скрипта даже если команда завершилась с ошибкой. set -e останавливает скрипт при первой ошибке (exit code != 0).\n\nДругие опции set: -u (ошибка при использовании неопределённой переменной), -o pipefail (pipe возвращает код ошибки из любой неудачной команды), -x (выводить каждую команду перед выполнением — для отладки).\n\ntrap позволяет перехватывать сигналы и выполнять cleanup-действия. trap 'commands' EXIT — выполнится при выходе из скрипта. trap 'commands' ERR — при ошибке.",
+        "example": "#!/bin/bash\nset -euo pipefail  # строгий режим\n\n# Cleanup при выходе\ntrap 'echo \"Cleaning up...\"; rm -f /tmp/tempfile' EXIT\n\n# Основная логика\necho \"Starting deployment...\"\ngit pull\nnpm install\nnpm run build\n\n# Если любая команда упадёт — скрипт остановится",
+        "key_points": [
+          "set -e — остановить скрипт при первой ошибке",
+          "set -u — ошибка если переменная не определена",
+          "trap — выполнить cleanup-действия при выходе/ошибке"
+        ]
+      },
+      {
+        "id": 14,
+        "title": "Логирование",
+        "content": "Хороший DevOps-скрипт всегда пишет логи. Логи помогают отлаживать проблемы, отслеживать выполнение, соответствовать аудиту.\n\nПростое логирование: перенаправление вывода в файл (command >> logfile.log 2>&1). Добавляй временные метки: echo \"$(date '+%Y-%m-%d %H:%M:%S') - Message\" >> log.txt.\n\nИспользуй logger для записи в syslog: logger -t my_script \"Starting backup\". Уровни логирования (логи в коде): INFO, WARNING, ERROR. Ротация логов: logrotate автоматически архивирует старые логи.",
+        "example": "#!/bin/bash\n\nLOGFILE=\"/var/log/myapp.log\"\n\nlog() {\n    echo \"$(date '+%Y-%m-%d %H:%M:%S') [$1] $2\" | tee -a \"$LOGFILE\"\n}\n\nlog \"INFO\" \"Starting backup process...\"\ntar -czf backup.tar.gz /data 2>&1 | tee -a \"$LOGFILE\"\n\nif [ $? -eq 0 ]; then\n    log \"INFO\" \"Backup completed successfully\"\nelse\n    log \"ERROR\" \"Backup failed\"\n    exit 1\nfi",
+        "key_points": [
+          "echo \"$(date) - Message\" >> log.txt — простое логирование",
+          "logger -t script_name — запись в системный syslog",
+          "tee -a — одновременно вывод в консоль и файл"
+        ]
+      },
+      {
+        "id": 15,
+        "title": "Best practices",
+        "content": "Best practices для Bash-скриптов: всегда начинай с #!/bin/bash (shebang), используй set -euo pipefail (строгий режим), проверяй входные данные, комментируй неочевидный код.\n\nИменование: переменные ЗАГЛАВНЫМИ для констант (DATABASE_URL), маленькими для обычных (user_name). Функции — глаголы (backup_files, check_status).\n\nБезопасность: никогда не храни пароли в скриптах (используй переменные окружения или секрет-менеджеры), используй \"$VAR\" в кавычках (защита от пробелов в путях), проверяй права доступа к критичным файлам.\n\nТестирование: используй shellcheck для статического анализа кода, пиши юнит-тесты (bats framework), проверяй скрипты на разных дистрибутивах.",
+        "example": "#!/bin/bash\nset -euo pipefail  # строгий режим\n\n# Константы\nreadonly BACKUP_DIR=\"/backups\"\nreadonly LOG_FILE=\"/var/log/backup.log\"\n\n# Функция с проверкой аргументов\nbackup() {\n    local source=\"$1\"\n    if [ ! -d \"$source\" ]; then\n        echo \"ERROR: $source is not a directory\" >&2\n        return 1\n    fi\n    tar -czf \"${BACKUP_DIR}/backup-$(date +%Y%m%d).tar.gz\" \"$source\"\n}\n\n# Проверить что скрипт запущен от root\nif [ \"$EUID\" -ne 0 ]; then\n    echo \"This script must be run as root\" >&2\n    exit 1\nfi\n\nbackup \"/var/www\"",
+        "key_points": [
+          "#!/bin/bash + set -euo pipefail — начало любого скрипта",
+          "\"$VAR\" — всегда в кавычках (защита от пробелов)",
+          "shellcheck — статический анализатор для Bash (найдёт ошибки)"
+        ]
+      }
+    ],
+    "tasks": [11, 12, 13]
+  },
+  "kubernetes": {
+    "title": "Kubernetes",
+    "cards": [
+      {
+        "id": 1,
+        "title": "Что такое Kubernetes",
+        "content": "Kubernetes (K8s) — это платформа оркестрации контейнеров, автоматизирующая развёртывание, масштабирование и управление контейнеризованными приложениями. Разработан Google, сейчас поддерживается Cloud Native Computing Foundation (CNCF).\n\nОсновные задачи K8s: автоматическое размещение контейнеров на узлах (scheduling), self-healing (перезапуск упавших контейнеров), горизонтальное масштабирование, service discovery и балансировка нагрузки, управление конфигурациями и секретами.\n\nПочему Kubernetes: стандарт индустрии для оркестрации, поддержка мультиоблачности (AWS, GCP, Azure), огромная экосистема инструментов (Helm, Istio, Prometheus), декларативное управление инфраструктурой.",
+        "example": "# Проверить версию kubectl и подключение к кластеру\nkubectl version --short\nkubectl cluster-info\n\n# Посмотреть узлы кластера\nkubectl get nodes\n\n# Посмотреть все ресурсы во всех namespace\nkubectl get all --all-namespaces",
+        "key_points": [
+          "Оркестрация контейнеров — автоматизация развёртывания и масштабирования",
+          "Self-healing — автоматический перезапуск упавших подов",
+          "Декларативный подход — описываешь желаемое состояние, K8s его достигает"
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Архитектура: Control Plane и Nodes",
+        "content": "Kubernetes кластер состоит из Control Plane (управляющий слой) и Worker Nodes (рабочие узлы). Control Plane управляет кластером, Worker Nodes запускают контейнеры.\n\nControl Plane компоненты: API Server (точка входа для всех операций), etcd (распределённое key-value хранилище состояния), Scheduler (размещает поды на узлах), Controller Manager (отслеживает состояние ресурсов и приводит к желаемому).\n\nWorker Node компоненты: kubelet (агент на узле, управляет подами), kube-proxy (сетевая маршрутизация), Container Runtime (Docker, containerd, CRI-O — запускает контейнеры).",
+        "example": "# Посмотреть компоненты Control Plane\nkubectl get pods -n kube-system\n\n# Детальная информация об узле\nkubectl describe node <node-name>\n\n# Посмотреть события в кластере\nkubectl get events --all-namespaces\n\n# Статус компонентов\nkubectl get componentstatuses",
+        "key_points": [
+          "Control Plane — мозг кластера (API Server, Scheduler, etcd)",
+          "Worker Nodes — исполнители (kubelet + container runtime)",
+          "etcd — единственное место хранения состояния кластера (критично для бэкапов)"
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Pods: базовая единица",
+        "content": "Pod — минимальная единица развёртывания в Kubernetes. Pod содержит один или несколько контейнеров, которые разделяют сеть и storage. Обычно в поде один основной контейнер + опциональные sidecar-контейнеры (логирование, мониторинг).\n\nПоды эфемерны — они могут быть удалены и пересозданы в любой момент. IP-адрес пода меняется при пересоздании — поэтому для доступа используются Services.\n\nПод описывается в YAML-манифесте: apiVersion, kind: Pod, metadata (имя, labels), spec (контейнеры, volumes, политики перезапуска). Контейнеры в поде общаются через localhost.",
+        "example": "# Создать под из манифеста\nkubectl apply -f pod.yaml\n\n# Посмотреть поды\nkubectl get pods\nkubectl get pods -o wide  # с IP и узлами\n\n# Детальная информация о поде\nkubectl describe pod my-pod\n\n# Логи контейнера в поде\nkubectl logs my-pod\nkubectl logs my-pod -c container-name  # если несколько контейнеров\n\n# Выполнить команду в поде\nkubectl exec -it my-pod -- /bin/bash",
+        "key_points": [
+          "Pod = 1+ контейнеров с общей сетью и storage",
+          "Поды эфемерны — не хранят состояние, могут быть пересозданы",
+          "Обычно не создаём поды напрямую — используем Deployments"
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Deployments: управление подами",
+        "content": "Deployment — контроллер для управления подами. Deployment гарантирует, что нужное количество реплик подов всегда запущено. Если под упал — Deployment создаст новый.\n\nDeployment использует ReplicaSet (контроллер для поддержания количества реплик) под капотом. Deployment позволяет делать rolling updates (постепенное обновление без даунтайма) и rollback (откат к предыдущей версии).\n\nОсновные поля: replicas (количество подов), selector (как найти свои поды по labels), template (шаблон пода), strategy (стратегия обновления — RollingUpdate или Recreate).",
+        "example": "# Создать Deployment\nkubectl create deployment nginx --image=nginx:1.21 --replicas=3\n\n# Посмотреть Deployments\nkubectl get deployments\n\n# Посмотреть ReplicaSets (создаются автоматически)\nkubectl get replicasets\n\n# Обновить образ (rolling update)\nkubectl set image deployment/nginx nginx=nginx:1.22\n\n# Посмотреть статус обновления\nkubectl rollout status deployment/nginx\n\n# Откатить к предыдущей версии\nkubectl rollout undo deployment/nginx\n\n# Масштабирование\nkubectl scale deployment/nginx --replicas=5",
+        "key_points": [
+          "Deployment — декларативное управление подами",
+          "Rolling update — обновление без даунтайма",
+          "Автоматический self-healing — пересоздание упавших подов"
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Services: сетевое взаимодействие",
+        "content": "Service — абстракция для доступа к подам. Поды эфемерны и меняют IP, Service предоставляет стабильный IP и DNS-имя. Service автоматически балансирует трафик между подами.\n\nТипы Services: ClusterIP (доступ только внутри кластера, по умолчанию), NodePort (открывает порт на всех узлах для внешнего доступа), LoadBalancer (создаёт внешний балансировщик в облаке), ExternalName (DNS alias).\n\nService находит свои поды через selector (соответствие labels). Трафик распределяется между всеми подами с этими labels.",
+        "example": "# Создать Service для Deployment\nkubectl expose deployment nginx --port=80 --type=ClusterIP\n\n# Посмотреть Services\nkubectl get services\n\n# DNS-имя Service: <service-name>.<namespace>.svc.cluster.local\n# Из пода можно обратиться: curl http://nginx\n\n# NodePort (доступ снаружи через <NodeIP>:<NodePort>)\nkubectl expose deployment nginx --type=NodePort --port=80\n\n# LoadBalancer (для облачных кластеров)\nkubectl expose deployment nginx --type=LoadBalancer --port=80\n\n# Детальная информация\nkubectl describe service nginx",
+        "key_points": [
+          "Service — стабильный IP и DNS для группы подов",
+          "selector — как Service находит свои поды (по labels)",
+          "ClusterIP — внутри кластера, NodePort — снаружи, LoadBalancer — облако"
+        ]
+      },
+      {
+        "id": 6,
+        "title": "ConfigMaps и Secrets",
+        "content": "ConfigMap — хранилище конфигурационных данных (не секретных). Используется для передачи настроек в контейнеры: переменные окружения, конфигурационные файлы, параметры командной строки.\n\nSecret — хранилище секретных данных (пароли, токены, ключи). Данные хранятся в base64 (не шифрование, просто кодировка!). Для реального шифрования используй внешние решения (HashiCorp Vault, Sealed Secrets).\n\nИспользование: монтирование как volume (файлы в контейнере) или как переменные окружения (env, envFrom). ConfigMap/Secret изменяются без пересборки образа — изменил конфиг, перезапустил под.",
+        "example": "# Создать ConfigMap\nkubectl create configmap app-config --from-literal=DATABASE_URL=postgres://db:5432\n\n# Создать ConfigMap из файла\nkubectl create configmap app-config --from-file=config.yaml\n\n# Создать Secret\nkubectl create secret generic db-password --from-literal=password=mypassword\n\n# Посмотреть ConfigMaps/Secrets\nkubectl get configmaps\nkubectl get secrets\n\n# Использование в поде (переменная окружения)\n# spec:\n#   containers:\n#   - env:\n#     - name: DATABASE_URL\n#       valueFrom:\n#         configMapKeyRef:\n#           name: app-config\n#           key: DATABASE_URL",
+        "key_points": [
+          "ConfigMap — конфигурация, Secret — секреты",
+          "Secrets в base64 — не шифрование! Используй Vault для реальной защиты",
+          "Изменение ConfigMap/Secret не пересоздаёт под автоматически"
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Volumes: персистентное хранилище",
+        "content": "Volumes в Kubernetes позволяют подам хранить данные, которые переживают перезапуск контейнера. Типы volumes: emptyDir (временное хранилище, удаляется с подом), hostPath (монтирует директорию с узла), PersistentVolume (внешнее хранилище).\n\nPersistentVolume (PV) — ресурс хранилища в кластере (например, AWS EBS, NFS). PersistentVolumeClaim (PVC) — запрос на выделение хранилища. Под монтирует PVC, K8s автоматически привязывает PV.\n\nStorageClass — шаблон для динамического создания PV. Например, StorageClass для AWS EBS автоматически создаст диск при создании PVC.",
+        "example": "# Создать PersistentVolumeClaim\napiVersion: v1\nkind: PersistentVolumeClaim\nmetadata:\n  name: my-pvc\nspec:\n  accessModes:\n    - ReadWriteOnce\n  resources:\n    requests:\n      storage: 10Gi\n\n# Использовать PVC в поде\n# spec:\n#   volumes:\n#   - name: data\n#     persistentVolumeClaim:\n#       claimName: my-pvc\n#   containers:\n#   - volumeMounts:\n#     - name: data\n#       mountPath: /data\n\n# Посмотреть PV и PVC\nkubectl get pv\nkubectl get pvc",
+        "key_points": [
+          "emptyDir — временное, hostPath — узел, PV — внешнее хранилище",
+          "PVC — запрос на хранилище, PV — выделенный ресурс",
+          "StorageClass — динамическое создание PV при создании PVC"
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Namespaces: изоляция ресурсов",
+        "content": "Namespace — виртуальный кластер внутри физического кластера. Позволяет разделять ресурсы между командами, проектами или окружениями (dev, staging, prod).\n\nПо умолчанию есть namespaces: default (если не указан другой), kube-system (системные компоненты K8s), kube-public (публично доступные ресурсы), kube-node-lease (heartbeats узлов).\n\nИзоляция: ресурсы в разных namespaces не видят друг друга напрямую (нужен полный DNS-путь). ResourceQuota ограничивает ресурсы namespace (CPU, память, количество подов). NetworkPolicy изолирует сетевой трафик.",
+        "example": "# Создать namespace\nkubectl create namespace dev\n\n# Посмотреть namespaces\nkubectl get namespaces\n\n# Создать ресурс в namespace\nkubectl apply -f deployment.yaml -n dev\n\n# Посмотреть ресурсы в namespace\nkubectl get pods -n dev\n\n# Переключить дефолтный namespace\nkubectl config set-context --current --namespace=dev\n\n# DNS между namespaces:\n# <service>.<namespace>.svc.cluster.local\n# Пример: curl http://nginx.dev.svc.cluster.local",
+        "key_points": [
+          "Namespace — логическое разделение ресурсов",
+          "default — дефолтный namespace если не указан другой",
+          "ResourceQuota — лимиты ресурсов для namespace"
+        ]
+      },
+      {
+        "id": 9,
+        "title": "kubectl: основные команды",
+        "content": "kubectl — CLI для управления Kubernetes. Основные команды: get (просмотр ресурсов), describe (детальная информация), apply (создать/обновить из манифеста), delete (удалить), logs (логи контейнера), exec (выполнить команду в контейнере).\n\nФлаги: -n <namespace> (указать namespace), -o yaml/json (вывод в формате), --all-namespaces (все namespaces), -w (watch — отслеживать изменения), -f <file> (файл манифеста).\n\nОтладка: kubectl describe — детальная инфа + события, kubectl logs — логи контейнера, kubectl exec -it — интерактивная оболочка в контейнере, kubectl get events — все события кластера.",
+        "example": "# Посмотреть ресурсы\nkubectl get pods\nkubectl get deployments -o wide\nkubectl get all -n kube-system\n\n# Детальная информация\nkubectl describe pod my-pod\n\n# Создать/обновить из манифеста\nkubectl apply -f deployment.yaml\n\n# Удалить ресурс\nkubectl delete pod my-pod\nkubectl delete -f deployment.yaml\n\n# Логи\nkubectl logs my-pod -f  # follow\n\n# Выполнить команду\nkubectl exec -it my-pod -- bash\n\n# Проброс порта (локально → под)\nkubectl port-forward pod/my-pod 8080:80",
+        "key_points": [
+          "kubectl apply -f — создать/обновить (декларативный подход)",
+          "kubectl get -o yaml — посмотреть полный манифест ресурса",
+          "kubectl logs -f — мониторинг логов в реальном времени"
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Best practices",
+        "content": "Best practices Kubernetes: используй Deployments вместо голых Pods, настраивай resource limits (CPU/memory) для предотвращения перегрузки узлов, используй liveness/readiness probes для health checks.\n\nБезопасность: не используй latest-теги образов (указывай конкретные версии), храни секреты в Secret (не в ConfigMap), используй RBAC для контроля доступа, запускай контейнеры от non-root пользователя.\n\nОрганизация: используй namespaces для разделения окружений, добавляй labels для группировки и фильтрации, используй annotations для метаданных, храни манифесты в Git (GitOps подход).",
+        "example": "# Resource limits в Deployment\nresources:\n  requests:\n    memory: \"64Mi\"\n    cpu: \"250m\"\n  limits:\n    memory: \"128Mi\"\n    cpu: \"500m\"\n\n# Liveness probe (перезапуск если не отвечает)\nlivenessProbe:\n  httpGet:\n    path: /healthz\n    port: 8080\n  initialDelaySeconds: 30\n  periodSeconds: 10\n\n# Readiness probe (не слать трафик пока не готов)\nreadinessProbe:\n  httpGet:\n    path: /ready\n    port: 8080\n  initialDelaySeconds: 5\n  periodSeconds: 5",
+        "key_points": [
+          "Resource limits — предотвращают перегрузку узлов",
+          "Probes — liveness для перезапуска, readiness для трафика",
+          "GitOps — манифесты в Git, автоматический deploy через CI/CD"
+        ]
+      }
+    ],
+    "tasks": [21, 22, 23]
+  },
+  "git": {
+    "title": "Git",
+    "cards": [
+      {
+        "id": 1,
+        "title": "Что такое Git",
+        "content": "Git — распределённая система контроля версий, созданная Линусом Торвальдсом для разработки ядра Linux. Git отслеживает изменения в коде, позволяет работать параллельно в ветках, объединять изменения и откатывать ошибки.\n\nПреимущества Git: распределённость (у каждого полная копия репозитория), скорость (локальные операции мгновенны), ветвление (дёшево и быстро), целостность данных (каждый коммит имеет SHA-1 хеш).\n\nОсновные понятия: репозиторий (хранилище кода), коммит (снимок состояния кода), ветка (независимая линия разработки), remote (удалённый репозиторий на GitHub/GitLab).",
+        "example": "# Установка Git\nsudo apt install git  # Ubuntu/Debian\nsudo yum install git  # CentOS/RHEL\n\n# Проверить версию\ngit --version\n\n# Настроить пользователя (обязательно!)\ngit config --global user.name \"Your Name\"\ngit config --global user.email \"your@email.com\"\n\n# Посмотреть настройки\ngit config --list",
+        "key_points": [
+          "Распределённая система — каждый имеет полную копию истории",
+          "Коммит — снимок состояния кода в момент времени",
+          "SHA-1 хеш — уникальный идентификатор коммита"
+        ]
+      },
+      {
+        "id": 2,
+        "title": "git init и git clone",
+        "content": "git init создаёт новый репозиторий в текущей директории. Создаётся скрытая папка .git, в которой хранятся все данные Git: история коммитов, ветки, конфигурация.\n\ngit clone копирует существующий удалённый репозиторий на локальную машину. Автоматически настраивается remote origin (ссылка на исходный репозиторий).\n\nПосле git init нужно добавить remote вручную (git remote add origin <url>), если планируешь пушить на сервер (GitHub, GitLab).",
+        "example": "# Создать новый репозиторий\nmkdir myproject && cd myproject\ngit init\n# Появится .git/ директория\n\n# Клонировать существующий репозиторий\ngit clone https://github.com/user/repo.git\ncd repo\n\n# Клонировать в конкретную директорию\ngit clone https://github.com/user/repo.git my-folder\n\n# Посмотреть remotes\ngit remote -v",
+        "key_points": [
+          "git init — новый репозиторий, git clone — копия существующего",
+          ".git/ — скрытая папка с историей и настройками",
+          "origin — стандартное имя для основного remote"
+        ]
+      },
+      {
+        "id": 3,
+        "title": "git add и git commit",
+        "content": "git add добавляет файлы в staging area (индекс) — промежуточное состояние перед коммитом. Можно добавить конкретные файлы (git add file.txt) или все изменения (git add .).\n\ngit commit сохраняет изменения из staging area в локальный репозиторий. Каждый коммит имеет сообщение (commit message), автора, дату и уникальный SHA-1 хеш.\n\nХорошие commit messages: краткое описание (до 50 символов), используй глаголы в повелительном наклонении (Add feature, Fix bug), детальное описание в теле коммита если нужно.",
+        "example": "# Посмотреть статус (какие файлы изменены)\ngit status\n\n# Добавить файл в staging\ngit add README.md\n\n# Добавить все изменения\ngit add .\n\n# Коммит с сообщением\ngit commit -m \"Add README with project description\"\n\n# Коммит с добавлением всех изменённых файлов (пропустить git add)\ngit commit -am \"Fix typo in documentation\"\n\n# Изменить последний коммит (добавить файлы или изменить message)\ngit commit --amend",
+        "key_points": [
+          "Staging area — промежуточный этап перед коммитом",
+          "git add . — добавить все изменения",
+          "Хорошее commit message — краткое, понятное, описывает ЧТО и ЗАЧЕМ"
+        ]
+      },
+      {
+        "id": 4,
+        "title": "git status, git log, git diff",
+        "content": "git status показывает текущее состояние: какие файлы изменены, что в staging, что не отслеживается. Это первая команда при работе с репозиторием.\n\ngit log отображает историю коммитов: автор, дата, сообщение, хеш. Флаги: --oneline (краткий формат), --graph (визуализация веток), --all (все ветки), -n 5 (последние 5 коммитов).\n\ngit diff показывает изменения: git diff (unstaged изменения), git diff --staged (изменения в staging), git diff HEAD (все изменения с последнего коммита), git diff <commit1> <commit2> (между коммитами).",
+        "example": "# Статус репозитория\ngit status\n\n# История коммитов\ngit log\ngit log --oneline --graph --all  # красивый вывод\ngit log --author=\"John\" --since=\"2 weeks ago\"\n\n# Изменения в файлах\ngit diff  # unstaged изменения\ngit diff --staged  # staged изменения\ngit diff HEAD~1  # изменения относительно предыдущего коммита\n\n# Изменения конкретного файла\ngit diff README.md",
+        "key_points": [
+          "git status — первая команда для проверки состояния",
+          "git log --oneline --graph — удобный формат истории",
+          "git diff — видеть изменения перед коммитом"
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Ветки: git branch, git checkout",
+        "content": "Ветки (branches) — независимые линии разработки. Создавай ветку для каждой фичи или багфикса, затем вливай в main через merge.\n\ngit branch показывает список веток, git branch <name> создаёт новую ветку, git checkout <name> переключается на ветку. С Git 2.23+ есть git switch — более понятная команда для переключения.\n\nВетка main (или master) — основная ветка. Feature branches — ветки для разработки фич. Release branches — ветки для релизов. Hotfix branches — срочные исправления на продакшене.",
+        "example": "# Посмотреть ветки\ngit branch\n\n# Создать новую ветку\ngit branch feature/add-login\n\n# Переключиться на ветку\ngit checkout feature/add-login\n\n# Создать и переключиться одной командой\ngit checkout -b feature/add-login\n\n# Новый способ (Git 2.23+)\ngit switch feature/add-login\ngit switch -c feature/new-feature  # создать и переключиться\n\n# Удалить ветку\ngit branch -d feature/add-login\ngit branch -D feature/add-login  # принудительно",
+        "key_points": [
+          "Одна ветка = одна фича/багфикс",
+          "git checkout -b — создать и переключиться одной командой",
+          "main/master — основная ветка, feature/* — ветки фич"
+        ]
+      },
+      {
+        "id": 6,
+        "title": "git merge: объединение веток",
+        "content": "git merge объединяет изменения из одной ветки в другую. Типичный workflow: разработка в feature-ветке, затем merge в main.\n\nТипы merge: fast-forward (если main не изменялся — просто перемещается указатель), three-way merge (если обе ветки имеют новые коммиты — создаётся merge commit).\n\nКонфликты возникают когда одни и те же строки изменены в обеих ветках. Git помечает конфликты в файлах: <<<<<<< HEAD ... ======= ... >>>>>>>. Разреши конфликт вручную, затем git add и git commit.",
+        "example": "# Переключиться на целевую ветку\ngit checkout main\n\n# Влить изменения из feature-ветки\ngit merge feature/add-login\n\n# Если конфликт:\n# 1. Открой файл, разреши конфликт (удали маркеры <<<<, ====, >>>>)\n# 2. git add <file>\n# 3. git commit\n\n# Отменить merge (если не закоммичен)\ngit merge --abort\n\n# Посмотреть ветки, которые уже влиты в main\ngit branch --merged\n\n# Удалить влитые ветки\ngit branch -d feature/add-login",
+        "key_points": [
+          "Fast-forward — main просто двигается вперёд (нет merge commit)",
+          "Three-way merge — создаётся merge commit с двумя родителями",
+          "Конфликты — разрешай вручную, затем git add + commit"
+        ]
+      },
+      {
+        "id": 7,
+        "title": "git rebase: линейная история",
+        "content": "git rebase переносит коммиты из одной ветки на другую, создавая линейную историю (без merge commits). Rebase перезаписывает историю — коммиты получают новые SHA-1 хеши.\n\nКогда использовать: для очистки истории перед merge в main, для синхронизации feature-ветки с актуальным main. Когда НЕ использовать: на публичных ветках (main, shared branches) — перезапись истории сломает работу других.\n\nИнтерактивный rebase (git rebase -i) позволяет редактировать историю: изменять сообщения коммитов, объединять коммиты (squash), удалять, переставлять порядок.",
+        "example": "# Обновить feature-ветку изменениями из main\ngit checkout feature/add-login\ngit rebase main\n\n# Если конфликт — разрешить, затем:\ngit add <file>\ngit rebase --continue\n\n# Отменить rebase\ngit rebase --abort\n\n# Интерактивный rebase (последние 3 коммита)\ngit rebase -i HEAD~3\n# Откроется редактор:\n# pick abc1234 First commit\n# squash def5678 Second commit  # объединить с предыдущим\n# reword ghi9012 Third commit   # изменить сообщение",
+        "key_points": [
+          "Rebase — линейная история, merge — ветвистая",
+          "НЕ используй rebase на публичных ветках (перезаписывает историю)",
+          "git rebase -i — редактирование истории (squash, reword)"
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Merge vs Rebase: что выбрать",
+        "content": "Merge и rebase решают одну задачу (интеграция изменений) разными способами. Merge сохраняет историю как есть, создавая merge commits. Rebase переписывает историю, делая её линейной.\n\nПреимущества merge: сохраняет полную историю, безопасен (не меняет существующие коммиты), понятен начинающим. Недостатки: история может быть запутанной (много merge commits).\n\nПреимущества rebase: чистая линейная история, проще понять последовательность изменений, легче использовать git bisect. Недостатки: переписывает историю (опасно для публичных веток), сложнее для новичков.\n\nРекомендация: merge для публичных веток (main), rebase для локальных feature-веток перед merge.",
+        "example": "# Workflow с merge\ngit checkout main\ngit pull\ngit checkout feature/add-login\ngit merge main  # обновить feature-ветку\n# ... разработка ...\ngit checkout main\ngit merge feature/add-login  # влить в main\n\n# Workflow с rebase\ngit checkout main\ngit pull\ngit checkout feature/add-login\ngit rebase main  # обновить feature-ветку\n# ... разработка ...\ngit checkout main\ngit merge feature/add-login  # fast-forward merge (чистая история)",
+        "key_points": [
+          "Merge — безопасен, сохраняет историю, подходит для публичных веток",
+          "Rebase — чистая история, но переписывает коммиты",
+          "Golden Rule: никогда не rebase публичные ветки"
+        ]
+      },
+      {
+        "id": 9,
+        "title": "git push, git pull, git fetch",
+        "content": "git push отправляет локальные коммиты на удалённый репозиторий (remote). git pull загружает изменения с remote и автоматически делает merge. git fetch загружает изменения, но не мерджит — позволяет проверить перед интеграцией.\n\ngit pull = git fetch + git merge. Если хочешь контроль — используй git fetch, затем git merge или git rebase вручную.\n\nПервый push ветки: git push -u origin feature/add-login. -u (--set-upstream) устанавливает связь между локальной и удалённой веткой — дальше можно просто git push.",
+        "example": "# Отправить коммиты на remote\ngit push\n\n# Первый push новой ветки\ngit push -u origin feature/add-login\n\n# Принудительный push (опасно! перезаписывает remote)\ngit push --force\ngit push --force-with-lease  # безопаснее (проверяет что не перезапишешь чужие коммиты)\n\n# Загрузить изменения с remote\ngit pull\n\n# Загрузить без автоматического merge\ngit fetch\ngit log origin/main  # посмотреть что изменилось\ngit merge origin/main  # влить вручную",
+        "key_points": [
+          "git push — отправить коммиты, git pull — загрузить и влить",
+          "git fetch — загрузить без merge (для проверки)",
+          "--force опасен — используй --force-with-lease"
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Best practices",
+        "content": "Best practices Git: коммить часто (маленькие атомарные коммиты лучше больших), писать понятные commit messages, использовать ветки для фич/багфиксов, не коммитить сгенерированные файлы (используй .gitignore).\n\nGit workflow: популярные модели — Git Flow (feature/develop/release/hotfix ветки), GitHub Flow (main + feature branches), Trunk-Based Development (короткоживущие ветки, частые коммиты в main).\n\nБезопасность: не коммить секреты (пароли, токены, ключи), проверять .gitignore, использовать git-secrets или pre-commit hooks для автоматической проверки, регулярно делать git pull перед push.",
+        "example": "# .gitignore (не коммитить эти файлы)\n# Зависимости\nnode_modules/\n__pycache__/\n*.pyc\n\n# Секреты\n.env\n*.key\n*.pem\n\n# IDE\n.vscode/\n.idea/\n\n# Временные файлы\n*.log\n*.tmp\n\n# Проверить что будет проигнорировано\ngit status --ignored\n\n# Добавить в .gitignore и удалить из репозитория\necho \"secrets.txt\" >> .gitignore\ngit rm --cached secrets.txt\ngit commit -m \"Remove secrets from repo\"",
+        "key_points": [
+          "Атомарные коммиты — один коммит = одно логическое изменение",
+          ".gitignore — обязателен (зависимости, секреты, временные файлы)",
+          "Не коммить секреты — используй переменные окружения"
+        ]
+      }
+    ],
+    "tasks": [31, 32, 33]
+  },
+  "docker": {
+    "title": "Docker",
+    "cards": [
+      {
+        "id": 1,
+        "title": "Что такое Docker",
+        "content": "Docker — платформа для разработки, доставки и запуска приложений в контейнерах. Контейнер — изолированная среда выполнения, включающая приложение и все его зависимости.\n\nПреимущества Docker: портативность (работает везде одинаково), изоляция (приложения не влияют друг на друга), эффективность (контейнеры легче виртуальных машин), быстрое развёртывание (секунды вместо минут).\n\nОсновные понятия: образ (image) — шаблон для контейнера, контейнер (container) — запущенный экземпляр образа, Dockerfile — инструкции для создания образа, Docker Hub — реестр публичных образов.",
+        "example": "# Установка Docker на Ubuntu\ncurl -fsSL https://get.docker.com -o get-docker.sh\nsudo sh get-docker.sh\n\n# Добавить пользователя в группу docker (не нужен sudo)\nsudo usermod -aG docker $USER\n\n# Проверить установку\ndocker --version\ndocker run hello-world\n\n# Посмотреть инфо\ndocker info",
+        "key_points": [
+          "Контейнер = приложение + зависимости в изолированной среде",
+          "Легче VM — нет гостевой ОС, используется ядро хоста",
+          "Образ (image) — шаблон, контейнер (container) — запущенный экземпляр"
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Images и Containers",
+        "content": "Docker Image — неизменяемый (immutable) шаблон для создания контейнеров. Образ состоит из слоёв (layers) — каждая инструкция в Dockerfile создаёт слой. Слои кешируются и переиспользуются.\n\nDocker Container — запущенный экземпляр образа. Контейнер имеет своё изолированное окружение: файловую систему, сеть, процессы. Можно запустить несколько контейнеров из одного образа.\n\nОбразы хранятся локально и в реестрах (Docker Hub, GitHub Container Registry). Тег (tag) — версия образа (nginx:1.21, python:3.9). Если тег не указан, используется latest.",
+        "example": "# Скачать образ из Docker Hub\ndocker pull nginx:1.21\n\n# Посмотреть локальные образы\ndocker images\n\n# Запустить контейнер из образа\ndocker run -d --name my-nginx -p 8080:80 nginx:1.21\n# -d: detached (в фоне)\n# --name: имя контейнера\n# -p: проброс портов (хост:контейнер)\n\n# Посмотреть запущенные контейнеры\ndocker ps\n\n# Посмотреть все контейнеры (включая остановленные)\ndocker ps -a\n\n# Остановить контейнер\ndocker stop my-nginx\n\n# Удалить контейнер\ndocker rm my-nginx",
+        "key_points": [
+          "Image — шаблон (неизменяемый), Container — экземпляр (живой процесс)",
+          "Теги — версии образов (nginx:1.21, python:3.9)",
+          "docker run — создать и запустить контейнер из образа"
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Dockerfile: создание образов",
+        "content": "Dockerfile — текстовый файл с инструкциями для создания Docker-образа. Каждая инструкция создаёт слой в образе.\n\nОсновные инструкции: FROM (базовый образ), RUN (выполнить команду при сборке), COPY (скопировать файлы из хоста в образ), WORKDIR (рабочая директория), EXPOSE (документировать порт), CMD (команда по умолчанию при запуске контейнера), ENTRYPOINT (точка входа, не переопределяется).\n\nСлои кешируются: если слой не изменился — используется из кеша. Порядок инструкций важен для эффективности кеширования.",
+        "example": "# Dockerfile для Node.js приложения\nFROM node:18-alpine\n\nWORKDIR /app\n\n# Копируем package.json и устанавливаем зависимости\n# (этот слой кешируется если зависимости не меняются)\nCOPY package*.json ./\nRUN npm install\n\n# Копируем код приложения\nCOPY . .\n\nEXPOSE 3000\n\n# Команда запуска\nCMD [\"node\", \"server.js\"]\n\n# Собрать образ\ndocker build -t myapp:1.0 .\n\n# Запустить контейнер\ndocker run -d -p 3000:3000 myapp:1.0",
+        "key_points": [
+          "FROM — обязательная первая инструкция (базовый образ)",
+          "Каждая инструкция — новый слой (кеширование)",
+          "CMD — команда по умолчанию, ENTRYPOINT — не переопределяется"
+        ]
+      },
+      {
+        "id": 4,
+        "title": "docker build и docker run",
+        "content": "docker build создаёт образ из Dockerfile. Процесс: читает Dockerfile, выполняет инструкции, создаёт слои, тегирует образ.\n\ndocker run создаёт и запускает контейнер из образа. Основные флаги: -d (detached, в фоне), -it (interactive terminal), -p (проброс портов), --name (имя контейнера), -v (монтирование volumes), --rm (удалить после остановки), -e (переменные окружения).\n\nКонтейнер живёт пока выполняется его основной процесс (CMD/ENTRYPOINT). Когда процесс завершается — контейнер останавливается.",
+        "example": "# Собрать образ (текущая директория)\ndocker build -t myapp:latest .\n\n# Собрать с другим Dockerfile\ndocker build -f Dockerfile.prod -t myapp:prod .\n\n# Запустить контейнер в фоне\ndocker run -d --name web -p 8080:80 nginx\n\n# Запустить интерактивно (получить shell)\ndocker run -it ubuntu:22.04 bash\n\n# Запустить с переменными окружения\ndocker run -e DATABASE_URL=postgres://... myapp\n\n# Запустить с автоудалением после остановки\ndocker run --rm myapp\n\n# Выполнить команду в запущенном контейнере\ndocker exec -it web bash",
+        "key_points": [
+          "docker build -t name:tag . — собрать образ с тегом",
+          "docker run -d — в фоне, -it — интерактивно",
+          "docker exec — выполнить команду в запущенном контейнере"
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Volumes: персистентное хранилище",
+        "content": "По умолчанию данные в контейнере эфемерны — удаляются при удалении контейнера. Volumes позволяют сохранять данные между перезапусками.\n\nТипы volumes: named volumes (управляются Docker, хранятся в /var/lib/docker/volumes/), bind mounts (монтируют директорию хоста), tmpfs (в памяти, эфемерно).\n\nNamed volumes — рекомендуемый способ для продакшена (Docker управляет, легко бэкапить). Bind mounts — для разработки (изменения в хост-директории сразу видны в контейнере).",
+        "example": "# Named volume\ndocker volume create mydata\ndocker run -d -v mydata:/data postgres\n\n# Bind mount (текущая директория → /app в контейнере)\ndocker run -d -v $(pwd):/app -p 3000:3000 node-app\n\n# Посмотреть volumes\ndocker volume ls\n\n# Удалить volume\ndocker volume rm mydata\n\n# Удалить неиспользуемые volumes\ndocker volume prune\n\n# Readonly mount (контейнер не может изменять)\ndocker run -v /host/path:/container/path:ro myapp",
+        "key_points": [
+          "Named volumes — для продакшена (Docker управляет)",
+          "Bind mounts — для разработки (хост-директория)",
+          "-v hostpath:containerpath — монтирование"
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Networks: сетевое взаимодействие",
+        "content": "Docker создаёт изолированные сети для контейнеров. По умолчанию контейнеры подключены к сети bridge — могут общаться друг с другом через внутренние IP.\n\nТипы сетей: bridge (default, изоляция на одном хосте), host (контейнер использует сеть хоста напрямую), none (нет сети), custom bridges (пользовательские сети с DNS).\n\nCustom bridge рекомендуется для продакшена: контейнеры могут обращаться друг к другу по имени (встроенный DNS), лучше изоляция, можно настраивать параметры сети.",
+        "example": "# Создать пользовательскую сеть\ndocker network create mynet\n\n# Запустить контейнеры в этой сети\ndocker run -d --name db --network mynet postgres\ndocker run -d --name web --network mynet -p 8080:80 myapp\n\n# Внутри web можно обратиться: curl http://db:5432\n\n# Посмотреть сети\ndocker network ls\n\n# Инспектировать сеть (какие контейнеры подключены)\ndocker network inspect mynet\n\n# Подключить контейнер к существующей сети\ndocker network connect mynet existing-container\n\n# Удалить сеть\ndocker network rm mynet",
+        "key_points": [
+          "Custom bridge — контейнеры общаются по имени (встроенный DNS)",
+          "Default bridge — по IP, нет DNS резолюции",
+          "--network — подключить контейнер к сети"
+        ]
+      },
+      {
+        "id": 7,
+        "title": "docker-compose: мультиконтейнерные приложения",
+        "content": "docker-compose — инструмент для управления мультиконтейнерными приложениями. Описываешь все сервисы в YAML-файле (docker-compose.yml), запускаешь одной командой.\n\nОсновные секции: version (версия формата), services (контейнеры), volumes (named volumes), networks (пользовательские сети). Для каждого сервиса: image или build, ports, volumes, environment, depends_on (зависимости).\n\nКоманды: docker-compose up (запустить), docker-compose down (остановить и удалить), docker-compose ps (статус), docker-compose logs (логи).",
+        "example": "# docker-compose.yml\nversion: '3.8'\nservices:\n  db:\n    image: postgres:15\n    environment:\n      POSTGRES_PASSWORD: secret\n    volumes:\n      - db-data:/var/lib/postgresql/data\n  \n  web:\n    build: .\n    ports:\n      - \"8080:80\"\n    depends_on:\n      - db\n    environment:\n      DATABASE_URL: postgres://db:5432/mydb\n\nvolumes:\n  db-data:\n\n# Запустить всё\ndocker-compose up -d\n\n# Посмотреть логи\ndocker-compose logs -f web\n\n# Остановить и удалить\ndocker-compose down",
+        "key_points": [
+          "docker-compose.yml — описание всех сервисов в одном файле",
+          "docker-compose up — запустить всё одной командой",
+          "depends_on — порядок запуска сервисов"
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Multi-stage builds: минимизация размера",
+        "content": "Multi-stage builds позволяют использовать несколько FROM в одном Dockerfile. Первый stage (builder) собирает приложение с инструментами сборки, второй stage — финальный образ с минимумом зависимостей.\n\nПреимущества: меньший размер образа (нет build-зависимостей), быстрее деплой, меньше атак-поверхность (нет компиляторов в продакшн-образе).\n\nТипичный пример: для Go-приложения первый stage компилирует бинарник, второй stage — scratch или alpine с бинарником (итоговый образ <10MB вместо >1GB).",
+        "example": "# Multi-stage Dockerfile для Node.js\nFROM node:18 AS builder\nWORKDIR /app\nCOPY package*.json ./\nRUN npm install\nCOPY . .\nRUN npm run build\n\n# Финальный образ (только продакшн-зависимости)\nFROM node:18-alpine\nWORKDIR /app\nCOPY --from=builder /app/dist ./dist\nCOPY package*.json ./\nRUN npm install --production\nCMD [\"node\", \"dist/server.js\"]\n\n# Результат: образ в 2-3 раза меньше",
+        "key_points": [
+          "FROM ... AS builder — именованный stage",
+          "COPY --from=builder — скопировать из предыдущего stage",
+          "Итоговый образ не содержит build-зависимости"
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Security: безопасность контейнеров",
+        "content": "Безопасность Docker: не запускай контейнеры от root (используй USER в Dockerfile), не используй latest-теги (указывай конкретные версии), сканируй образы на уязвимости (docker scan, Trivy), ограничивай ресурсы (--memory, --cpus).\n\nСекреты: не храни в Dockerfile или переменных окружения (видны в docker inspect). Используй Docker secrets (Docker Swarm) или внешние хранилища (HashiCorp Vault, AWS Secrets Manager).\n\nСетевая безопасность: используй пользовательские сети (изоляция), закрывай порты (не делай -p 0.0.0.0:...), используй least privilege (минимальные права).",
+        "example": "# Dockerfile с non-root пользователем\nFROM node:18-alpine\n\n# Создать пользователя\nRUN addgroup -S appgroup && adduser -S appuser -G appgroup\n\nWORKDIR /app\nCOPY --chown=appuser:appgroup . .\n\nUSER appuser\n\nCMD [\"node\", \"server.js\"]\n\n# Ограничить ресурсы при запуске\ndocker run -d --memory=\"512m\" --cpus=\"1.0\" myapp\n\n# Сканирование образа\ndocker scan myapp:latest\n# Или с Trivy:\ntrivy image myapp:latest",
+        "key_points": [
+          "USER — запускать от non-root пользователя",
+          "Конкретные версии образов — не latest",
+          "Сканирование на уязвимости — docker scan, Trivy"
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Best practices",
+        "content": "Best practices Docker: минимизировать размер образов (используй alpine, multi-stage builds), один процесс на контейнер (не используй контейнер как VM), использовать .dockerignore (не копировать лишнее), оптимизировать кеширование слоёв.\n\nКеширование: ставь часто меняющиеся инструкции в конец Dockerfile (сначала зависимости, потом код). Объединяй RUN команды (RUN apt-get update && apt-get install -y ... && apt-get clean).\n\nМониторинг: используй health checks (HEALTHCHECK в Dockerfile), собирай логи централизованно (не храни в контейнере), ограничивай ресурсы (CPU, память), регулярно обновляй базовые образы.",
+        "example": "# .dockerignore (не копировать в образ)\nnode_modules\n.git\n*.log\n.env\nDockerfile\nREADME.md\n\n# Dockerfile с оптимизациями\nFROM node:18-alpine\n\nWORKDIR /app\n\n# Зависимости в начале (кеширование)\nCOPY package*.json ./\nRUN npm install --production\n\n# Код в конце (часто меняется)\nCOPY . .\n\n# Health check\nHEALTHCHECK --interval=30s --timeout=3s \\\n  CMD node healthcheck.js || exit 1\n\nCMD [\"node\", \"server.js\"]",
+        "key_points": [
+          "Alpine образы — минимальный размер",
+          ".dockerignore — не копировать лишнее",
+          "HEALTHCHECK — мониторинг состояния контейнера"
+        ]
+      }
+    ],
+    "tasks": [41, 42, 43]
+  }
+}
