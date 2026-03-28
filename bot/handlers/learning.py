@@ -1,10 +1,12 @@
 """
-Режим обучения - интерактивные лекции по темам
+Режим обучения - карусель карточек по темам
 
 Функционал:
 - Выбор темы (Nginx, Bash, K8s, Git, Docker)
-- Мини-лекция (200-300 слов)
-- 2-3 задачи по теме с детальными объяснениями
+- Карусель из 10-15 карточек с навигацией
+- Сохранение прогресса (текущая карточка)
+- Быстрый переход: /nginx 5, /bash 10, etc.
+- Интеграция с задачами после прохождения теории
 """
 
 from aiogram import Router, F
@@ -15,24 +17,103 @@ import json
 import os
 
 from ..db.models import get_session
-from ..db.crud import get_or_create_user, get_task_by_id, save_progress
+from ..db.crud import (
+    get_or_create_user,
+    update_learning_progress,
+    get_learning_progress,
+    reset_learning_progress
+)
 
 router = Router()
 
-# Хранилище активных обучающих сессий
-learning_sessions = {}
-
-# Загрузить лекции из JSON
-def load_lectures():
-    """Загрузить лекции из JSON файла"""
-    lectures_file = os.path.join(os.path.dirname(__file__), '..', 'content', 'lectures.json')
-    with open(lectures_file, 'r', encoding='utf-8') as f:
+# Загрузить карточки из JSON
+def load_learning_cards():
+    """Загрузить карточки обучения из JSON файла"""
+    cards_file = os.path.join(os.path.dirname(__file__), '..', 'content', 'learning_cards.json')
+    with open(cards_file, 'r', encoding='utf-8') as f:
         return json.load(f)
+
+
+def get_card_keyboard(topic: str, card_num: int, total_cards: int) -> InlineKeyboardMarkup:
+    """Создать клавиатуру для карточки с навигацией"""
+    buttons = []
+    
+    # Первая строка: навигация
+    nav_row = []
+    if card_num > 1:
+        nav_row.append(InlineKeyboardButton(
+            text="⬅️ Предыдущая",
+            callback_data=f"carousel:prev:{topic}:{card_num}"
+        ))
+    
+    nav_row.append(InlineKeyboardButton(
+        text=f"{card_num}/{total_cards}",
+        callback_data="carousel:noop"
+    ))
+    
+    if card_num < total_cards:
+        nav_row.append(InlineKeyboardButton(
+            text="➡️ Следующая",
+            callback_data=f"carousel:next:{topic}:{card_num}"
+        ))
+    
+    buttons.append(nav_row)
+    
+    # Вторая строка: действия
+    action_row = []
+    
+    if card_num == total_cards:
+        # Последняя карточка: кнопка для перехода к тестам
+        action_row.append(InlineKeyboardButton(
+            text="✅ Начать тесты",
+            callback_data=f"carousel:tests:{topic}"
+        ))
+    else:
+        action_row.append(InlineKeyboardButton(
+            text="✅ Начать тесты",
+            callback_data=f"carousel:tests:{topic}"
+        ))
+    
+    action_row.append(InlineKeyboardButton(
+        text="🔄 Начать сначала",
+        callback_data=f"carousel:restart:{topic}"
+    ))
+    
+    buttons.append(action_row)
+    
+    # Третья строка: выход
+    buttons.append([
+        InlineKeyboardButton(text="🏠 В меню", callback_data="carousel:menu")
+    ])
+    
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def format_card_message(topic_data: dict, card: dict, card_num: int, total_cards: int) -> str:
+    """Форматировать сообщение карточки"""
+    topic_title = topic_data['title']
+    card_title = card['title']
+    content = card['content']
+    example = card.get('example', '')
+    key_points = card.get('key_points', [])
+    
+    message = f"📘 <b>{topic_title}: {card_num}/{total_cards} — {card_title}</b>\n\n"
+    message += f"{content}\n\n"
+    
+    if example:
+        message += f"<b>Пример:</b>\n<code>{example}</code>\n\n"
+    
+    if key_points:
+        message += "<b>Ключевые моменты:</b>\n"
+        for point in key_points:
+            message += f"• {point}\n"
+    
+    return message
 
 
 @router.message(Command("learning"))
 async def cmd_learning(message: Message):
-    """Запустить режим обучения"""
+    """Запустить режим обучения (выбор темы)"""
     session = get_session()
     user = get_or_create_user(session, message.from_user.id, message.from_user.username)
     session.close()
@@ -55,50 +136,51 @@ async def cmd_learning(message: Message):
     await message.answer(
         "📚 <b>Режим обучения</b>\n\n"
         "Выбери тему для изучения:\n\n"
-        "• <b>Nginx</b> — логи, конфигурация, анализ трафика\n"
-        "• <b>Bash</b> — скрипты, CLI утилиты, автоматизация\n"
-        "• <b>Kubernetes</b> — поды, сервисы, деплойменты\n"
-        "• <b>Git</b> — версионирование, ветки, коммиты\n"
-        "• <b>Docker</b> — контейнеры, образы, Dockerfile\n\n"
+        "• <b>Nginx</b> — 10 карточек (от установки до best practices)\n"
+        "• <b>Bash</b> — 15 карточек (команды, скрипты, автоматизация)\n"
+        "• <b>Kubernetes</b> — 10 карточек (архитектура, поды, деплойменты)\n"
+        "• <b>Git</b> — 10 карточек (основы, ветки, merge/rebase)\n"
+        "• <b>Docker</b> — 10 карточек (контейнеры, образы, compose)\n\n"
         "Каждая тема включает:\n"
-        "✅ Мини-лекцию\n"
-        "✅ 2-3 задачи\n"
-        "✅ Детальные объяснения решений",
+        "✅ Карусель теоретических карточек\n"
+        "✅ Навигация ⬅️ ➡️\n"
+        "✅ Практические задачи после теории\n\n"
+        "Также доступны команды для быстрого перехода:\n"
+        "<code>/nginx 5</code> — 5-я карточка Nginx\n"
+        "<code>/bash 10</code> — 10-я карточка Bash\n"
+        "<code>/k8s 3</code> — 3-я карточка Kubernetes",
         reply_markup=keyboard,
         parse_mode="HTML"
     )
 
 
 @router.callback_query(F.data.startswith("learn_"))
-async def show_lecture(callback: CallbackQuery):
-    """Показать лекцию по выбранной теме"""
+async def show_topic_first_card(callback: CallbackQuery):
+    """Показать первую карточку выбранной темы"""
     topic = callback.data.replace("learn_", "")
-    lectures = load_lectures()
+    cards_data = load_learning_cards()
     
-    if topic not in lectures:
+    if topic not in cards_data:
         await callback.answer("Тема не найдена", show_alert=True)
         return
     
-    lecture_data = lectures[topic]
     user_id = callback.from_user.id
+    session = get_session()
     
-    # Сохранить сессию обучения
-    learning_sessions[user_id] = {
-        'topic': topic,
-        'tasks': lecture_data['tasks'].copy(),
-        'current_task_index': 0,
-        'started_at': datetime.now().timestamp()
-    }
+    # Сохранить прогресс (начало темы)
+    update_learning_progress(session, user_id, topic, 1)
+    session.close()
     
-    # Кнопка для начала задач
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="📝 Начать задачи", callback_data=f"start_learning_tasks_{topic}")]
-    ])
+    # Показать первую карточку
+    topic_data = cards_data[topic]
+    card = topic_data['cards'][0]
+    total_cards = len(topic_data['cards'])
+    
+    message_text = format_card_message(topic_data, card, 1, total_cards)
+    keyboard = get_card_keyboard(topic, 1, total_cards)
     
     await callback.message.edit_text(
-        f"📚 <b>Обучение: {lecture_data['title']}</b>\n\n"
-        f"{lecture_data['lecture']}\n\n"
-        f"Готов попробовать решить задачи? 💪",
+        message_text,
         reply_markup=keyboard,
         parse_mode="HTML"
     )
@@ -106,154 +188,201 @@ async def show_lecture(callback: CallbackQuery):
     await callback.answer()
 
 
-@router.callback_query(F.data.startswith("start_learning_tasks_"))
-async def start_learning_tasks(callback: CallbackQuery):
-    """Начать задачи по теме"""
+@router.callback_query(F.data.startswith("carousel:"))
+async def handle_carousel_action(callback: CallbackQuery):
+    """Обработать действия карусели (prev, next, tests, restart, menu)"""
+    parts = callback.data.split(":")
+    action = parts[1]
+    
+    if action == "noop":
+        # Кнопка-счётчик, ничего не делаем
+        await callback.answer()
+        return
+    
+    if action == "menu":
+        # Вернуться в главное меню
+        await cmd_learning(callback.message)
+        await callback.answer()
+        return
+    
+    topic = parts[2]
+    cards_data = load_learning_cards()
+    
+    if topic not in cards_data:
+        await callback.answer("Тема не найдена", show_alert=True)
+        return
+    
+    topic_data = cards_data[topic]
+    total_cards = len(topic_data['cards'])
     user_id = callback.from_user.id
+    session = get_session()
     
-    if user_id not in learning_sessions:
-        await callback.answer("Сессия истекла. Начни заново: /learning", show_alert=True)
-        return
-    
-    # Отправить первую задачу
-    await send_learning_task(callback.message, user_id)
-    await callback.answer()
-
-
-async def send_learning_task(message: Message, user_id: int):
-    """Отправить следующую задачу в режиме обучения"""
-    if user_id not in learning_sessions:
-        await message.edit_text("Сессия истекла. Начни заново: /learning")
-        return
-    
-    session_data = learning_sessions[user_id]
-    current_index = session_data['current_task_index']
-    tasks = session_data['tasks']
-    
-    if current_index >= len(tasks):
-        # Все задачи завершены
-        await message.edit_text(
-            f"🎉 <b>Тема '{session_data['topic']}' завершена!</b>\n\n"
-            f"Отличная работа! Ты изучил все задачи по этой теме.\n\n"
-            f"Выбери другую тему: /learning\n"
-            f"Или попробуй мок-собес: /mock_interview",
+    if action == "prev":
+        current_card = int(parts[3])
+        new_card = max(1, current_card - 1)
+        update_learning_progress(session, user_id, topic, new_card)
+        
+        card = topic_data['cards'][new_card - 1]
+        message_text = format_card_message(topic_data, card, new_card, total_cards)
+        keyboard = get_card_keyboard(topic, new_card, total_cards)
+        
+        await callback.message.edit_text(
+            message_text,
+            reply_markup=keyboard,
             parse_mode="HTML"
         )
-        del learning_sessions[user_id]
-        return
     
-    # Получить текущую задачу
-    task_id = tasks[current_index]
-    db_session = get_session()
-    task = get_task_by_id(db_session, task_id)
-    db_session.close()
+    elif action == "next":
+        current_card = int(parts[3])
+        new_card = min(total_cards, current_card + 1)
+        update_learning_progress(session, user_id, topic, new_card)
+        
+        if new_card == total_cards:
+            # Последняя карточка: поздравление
+            card = topic_data['cards'][new_card - 1]
+            message_text = format_card_message(topic_data, card, new_card, total_cards)
+            message_text += f"\n\n🎓 <b>Поздравляю!</b> Ты прошёл всю теорию по {topic_data['title']}!"
+            keyboard = get_card_keyboard(topic, new_card, total_cards)
+            
+            await callback.message.edit_text(
+                message_text,
+                reply_markup=keyboard,
+                parse_mode="HTML"
+            )
+        else:
+            card = topic_data['cards'][new_card - 1]
+            message_text = format_card_message(topic_data, card, new_card, total_cards)
+            keyboard = get_card_keyboard(topic, new_card, total_cards)
+            
+            await callback.message.edit_text(
+                message_text,
+                reply_markup=keyboard,
+                parse_mode="HTML"
+            )
     
-    if not task:
-        await message.edit_text("Ошибка: задача не найдена")
-        return
+    elif action == "restart":
+        # Начать тему сначала
+        reset_learning_progress(session, user_id, topic)
+        
+        card = topic_data['cards'][0]
+        message_text = format_card_message(topic_data, card, 1, total_cards)
+        keyboard = get_card_keyboard(topic, 1, total_cards)
+        
+        await callback.message.edit_text(
+            message_text,
+            reply_markup=keyboard,
+            parse_mode="HTML"
+        )
     
-    # Сохранить время начала задачи
-    session_data['task_started_at'] = datetime.now().timestamp()
+    elif action == "tests":
+        # Перейти к задачам по теме
+        await callback.message.edit_text(
+            f"🎯 <b>Задачи по теме: {topic_data['title']}</b>\n\n"
+            f"Теперь время проверить знания на практике!\n\n"
+            f"<i>Интеграция с задачами будет добавлена в следующей версии.</i>\n"
+            f"Пока что используй команду <code>/task</code> для тренировки.\n\n"
+            f"Выбери другую тему: /learning",
+            parse_mode="HTML"
+        )
     
-    # Кнопки
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(text="✅ Показать решение", callback_data=f"learning_solution_{task_id}"),
-            InlineKeyboardButton(text="💡 Подсказка", callback_data=f"learning_hint_{task_id}")
-        ]
-    ])
-    
-    await message.edit_text(
-        f"📝 <b>Задача {current_index + 1}/{len(tasks)}</b>\n\n"
-        f"<b>Категория:</b> {task.category.upper()}\n"
-        f"<b>Сложность:</b> {task.difficulty}\n\n"
-        f"<b>Задание:</b>\n{task.question}\n\n"
-        f"Попробуй решить самостоятельно, затем нажми кнопку!",
-        reply_markup=keyboard,
-        parse_mode="HTML"
-    )
+    session.close()
+    await callback.answer()
 
 
-@router.callback_query(F.data.startswith("learning_solution_"))
-async def show_learning_solution(callback: CallbackQuery):
-    """Показать детальное решение задачи в режиме обучения"""
-    task_id = int(callback.data.replace("learning_solution_", ""))
-    user_id = callback.from_user.id
+# ============= КОМАНДЫ БЫСТРОГО ПЕРЕХОДА =============
+
+@router.message(Command("nginx"))
+async def cmd_nginx_jump(message: Message):
+    """Быстрый переход к карточке Nginx"""
+    await jump_to_card(message, "nginx")
+
+
+@router.message(Command("bash"))
+async def cmd_bash_jump(message: Message):
+    """Быстрый переход к карточке Bash"""
+    await jump_to_card(message, "bash")
+
+
+@router.message(Command("k8s", "kubernetes"))
+async def cmd_k8s_jump(message: Message):
+    """Быстрый переход к карточке Kubernetes"""
+    await jump_to_card(message, "kubernetes")
+
+
+@router.message(Command("git"))
+async def cmd_git_jump(message: Message):
+    """Быстрый переход к карточке Git"""
+    await jump_to_card(message, "git")
+
+
+@router.message(Command("docker"))
+async def cmd_docker_jump(message: Message):
+    """Быстрый переход к карточке Docker"""
+    await jump_to_card(message, "docker")
+
+
+async def jump_to_card(message: Message, topic: str):
+    """Перейти к конкретной карточке темы"""
+    cards_data = load_learning_cards()
     
-    db_session = get_session()
-    task = get_task_by_id(db_session, task_id)
-    
-    if not task:
-        await callback.answer("Задача не найдена", show_alert=True)
-        db_session.close()
+    if topic not in cards_data:
+        await message.answer("Тема не найдена. Используй /learning для выбора темы.")
         return
     
-    # Посчитать время
-    time_spent = None
-    if user_id in learning_sessions and 'task_started_at' in learning_sessions[user_id]:
-        time_spent = int(datetime.now().timestamp() - learning_sessions[user_id]['task_started_at'])
+    topic_data = cards_data[topic]
+    total_cards = len(topic_data['cards'])
+    
+    # Получить номер карточки из аргументов команды
+    args = message.text.split(maxsplit=1)
+    if len(args) < 2:
+        # Если номер не указан, показать текущую или первую
+        session = get_session()
+        progress = get_learning_progress(session, message.from_user.id)
+        session.close()
+        
+        if progress['topic'] == topic:
+            card_num = progress['card']
+        else:
+            card_num = 1
+    else:
+        try:
+            card_num = int(args[1])
+        except ValueError:
+            await message.answer(
+                f"❌ Неверный формат. Используй: <code>/{topic} [номер]</code>\n"
+                f"Пример: <code>/{topic} 5</code>",
+                parse_mode="HTML"
+            )
+            return
+    
+    # Валидация номера карточки
+    if card_num < 1:
+        card_num = 1
+        await message.answer(
+            f"⚠️ Минимальный номер карточки: 1\n"
+            f"Переход на первую карточку...",
+            parse_mode="HTML"
+        )
+    elif card_num > total_cards:
+        card_num = total_cards
+        await message.answer(
+            f"⚠️ Всего {total_cards} карточек в теме {topic_data['title']}\n"
+            f"Переход на последнюю карточку...",
+            parse_mode="HTML"
+        )
     
     # Сохранить прогресс
-    save_progress(db_session, user_id, task_id, solved=True, time_spent=time_spent)
-    db_session.close()
+    session = get_session()
+    update_learning_progress(session, message.from_user.id, topic, card_num)
+    session.close()
     
-    # Подготовить детальное объяснение
-    explanation_parts = task.explanation.split("\n")
-    detailed_explanation = "\n\n".join([f"• {part.strip()}" for part in explanation_parts if part.strip()])
+    # Показать карточку
+    card = topic_data['cards'][card_num - 1]
+    message_text = format_card_message(topic_data, card, card_num, total_cards)
+    keyboard = get_card_keyboard(topic, card_num, total_cards)
     
-    # Альтернативы и best practices (из hints)
-    extras = ""
-    if task.hints:
-        extras = "\n\n<b>💡 Дополнительно:</b>\n" + "\n".join([f"• {hint}" for hint in task.hints])
-    
-    time_str = f"{time_spent // 60} мин {time_spent % 60} сек" if time_spent else "?"
-    
-    # Кнопка для следующей задачи
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="➡️ Следующая задача", callback_data="learning_next_task")]
-    ])
-    
-    await callback.message.edit_text(
-        f"✅ <b>Решение задачи #{task_id}</b>\n\n"
-        f"<code>{task.solution}</code>\n\n"
-        f"<b>📖 Детальное объяснение:</b>\n{detailed_explanation}"
-        f"{extras}\n\n"
-        f"⏱ Твоё время: {time_str}",
+    await message.answer(
+        message_text,
         reply_markup=keyboard,
         parse_mode="HTML"
     )
-    
-    # Переместить к следующей задаче
-    if user_id in learning_sessions:
-        learning_sessions[user_id]['current_task_index'] += 1
-    
-    await callback.answer()
-
-
-@router.callback_query(F.data.startswith("learning_hint_"))
-async def show_learning_hint(callback: CallbackQuery):
-    """Показать подсказку в режиме обучения"""
-    task_id = int(callback.data.replace("learning_hint_", ""))
-    
-    db_session = get_session()
-    task = get_task_by_id(db_session, task_id)
-    db_session.close()
-    
-    if not task or not task.hints:
-        await callback.answer("Подсказок нет для этой задачи", show_alert=True)
-        return
-    
-    hints_text = "\n".join([f"• {hint}" for hint in task.hints])
-    
-    await callback.answer(
-        f"💡 Подсказка:\n\n{hints_text}",
-        show_alert=True
-    )
-
-
-@router.callback_query(F.data == "learning_next_task")
-async def next_learning_task(callback: CallbackQuery):
-    """Перейти к следующей задаче"""
-    user_id = callback.from_user.id
-    await send_learning_task(callback.message, user_id)
-    await callback.answer()
