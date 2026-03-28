@@ -17,7 +17,7 @@ from aiogram.types import Message
 from aiogram.client.default import DefaultBotProperties
 
 # Импорт handlers
-from .handlers import training, mock_interview
+from .handlers import training, mock_interview, learning, settings
 
 # Импорт БД
 from .db.models import init_db, get_session
@@ -58,7 +58,9 @@ async def cmd_start(message: Message):
         f"Помогу тебе подготовиться к собеседованию DevOps Engineer.\n\n"
         f"<b>Режимы:</b>\n"
         f"• /training — Тренировка (раз в час задача)\n"
+        f"• /learning — Обучение (интерактивные лекции)\n"
         f"• /mock_interview — Мок-собес (30 мин, 3-5 задач)\n"
+        f"• /settings — Настройки режимов\n"
         f"• /task — Получить задачу сейчас\n"
         f"• /help — Помощь\n\n"
         f"Погнали! 🚀"
@@ -73,9 +75,13 @@ async def cmd_help(message: Message):
         "<b>Тренировка:</b>\n"
         "• /training — Включить режим тренировки\n"
         "• /task — Получить задачу сейчас\n\n"
+        "<b>Обучение:</b>\n"
+        "• /learning — Интерактивные лекции по темам\n\n"
         "<b>Мок-собес:</b>\n"
         "• /mock_interview — Запустить мок-собес (30 мин)\n"
         "• /next_task — Следующая задача в собесе\n\n"
+        "<b>Настройки:</b>\n"
+        "• /settings — Управление режимами\n\n"
         "<b>Категории задач:</b>\n"
         "• Nginx (10 задач)\n"
         "• Bash/CLI (15 задач)\n"
@@ -118,6 +124,8 @@ async def main():
     # Подключить роутеры
     dp.include_router(training.router)
     dp.include_router(mock_interview.router)
+    dp.include_router(learning.router)
+    dp.include_router(settings.router)
     
     # Настроить планировщик (пока пустой список пользователей)
     # В продакшене можно хранить подписанных пользователей в БД
