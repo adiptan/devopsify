@@ -196,6 +196,11 @@ async def send_scheduled_task(bot, user_id: int):
     session = get_session()
     user = get_or_create_user(session, user_id)
     
+    # Проверить что тренировка включена
+    if not user.training_enabled:
+        session.close()
+        return
+    
     task = get_random_task(session, user_id)
     
     if not task:
