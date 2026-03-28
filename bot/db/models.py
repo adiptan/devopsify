@@ -47,6 +47,8 @@ class User(Base):
     learning_enabled = Column(Boolean, default=False)  # Режим обучения (лекции)
     learning_topic = Column(String(20), nullable=True)  # Текущая тема обучения (nginx, bash, k8s, git, docker)
     learning_card = Column(Integer, default=1)  # Номер текущей карточки в теме
+    auto_training_enabled = Column(Boolean, default=False)  # Автоматическая рассылка задач
+    auto_training_frequency = Column(String(20), default='hourly')  # Частота рассылки: hourly, daily, twice_daily, thrice_daily
     
     # Связи
     progress_records = relationship("Progress", back_populates="user")

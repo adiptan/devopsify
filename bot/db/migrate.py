@@ -34,6 +34,9 @@ def run_migrations(db_path: str = None):
         # Migration 001: Add learning carousel columns
         _migrate_001_learning_columns(cursor, conn)
         
+        # Migration 002: Add auto training columns
+        _migrate_002_auto_training(cursor, conn)
+        
         print("[Migrations] ✅ All migrations completed successfully")
     except Exception as e:
         print(f"[Migrations] ❌ Error during migration: {e}")
@@ -63,6 +66,28 @@ def _migrate_001_learning_columns(cursor, conn):
         print("[Migration 001] ✅ Added learning_topic and learning_card columns")
     else:
         print("[Migration 001] ⏭️  Already applied (learning columns exist)")
+
+
+def _migrate_002_auto_training(cursor, conn):
+    """Migration 002: Add auto_training_enabled and auto_training_frequency columns"""
+    
+    # Check if auto_training_enabled column exists
+    cursor.execute("PRAGMA table_info(users)")
+    columns = [col[1] for col in cursor.fetchall()]
+    
+    if 'auto_training_enabled' not in columns:
+        print("[Migration 002] Adding auto training columns...")
+        
+        # Add auto_training_enabled
+        cursor.execute("ALTER TABLE users ADD COLUMN auto_training_enabled BOOLEAN DEFAULT FALSE")
+        
+        # Add auto_training_frequency
+        cursor.execute("ALTER TABLE users ADD COLUMN auto_training_frequency VARCHAR(20) DEFAULT 'hourly'")
+        
+        conn.commit()
+        print("[Migration 002] ✅ Added auto_training_enabled and auto_training_frequency columns")
+    else:
+        print("[Migration 002] ⏭️  Already applied (auto training columns exist)")
 
 
 if __name__ == "__main__":

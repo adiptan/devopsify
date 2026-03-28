@@ -92,6 +92,43 @@ def reset_learning_progress(session: Session, user_id: int, topic: str) -> User:
     return user
 
 
+# ============= AUTO TRAINING =============
+
+def enable_auto_training(session: Session, user_id: int, frequency: str = 'hourly') -> User:
+    """Включить автоматическую рассылку задач"""
+    user = session.query(User).filter(User.user_id == user_id).first()
+    if user:
+        user.auto_training_enabled = True
+        user.auto_training_frequency = frequency
+        session.commit()
+    return user
+
+
+def disable_auto_training(session: Session, user_id: int) -> User:
+    """Отключить автоматическую рассылку задач"""
+    user = session.query(User).filter(User.user_id == user_id).first()
+    if user:
+        user.auto_training_enabled = False
+        session.commit()
+    return user
+
+
+def is_auto_training_enabled(session: Session, user_id: int) -> tuple:
+    """Проверить статус автоматической рассылки"""
+    user = session.query(User).filter(User.user_id == user_id).first()
+    if user:
+        return user.auto_training_enabled, user.auto_training_frequency
+    return False, None
+
+
+def get_users_with_auto_training(session: Session, frequency: str = None) -> List[User]:
+    """Получить пользователей с включённой автоматической рассылкой"""
+    query = session.query(User).filter(User.auto_training_enabled == True)
+    if frequency:
+        query = query.filter(User.auto_training_frequency == frequency)
+    return query.all()
+
+
 # ============= TASKS =============
 
 def load_tasks_from_json(session: Session, json_data: List[dict]):
