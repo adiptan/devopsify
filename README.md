@@ -32,8 +32,9 @@ Telegram бот для подготовки к собеседованиям DevO
 
 ### Локально
 ```bash
-# 1. Создать .env файл
-echo "BOT_TOKEN=your_telegram_bot_token" > .env
+# 1. Создать .env файл из примера
+cp .env.example .env
+# Отредактируй .env и добавь свой Telegram bot token
 
 # 2. Установить зависимости
 pip install -r requirements.txt
@@ -44,8 +45,9 @@ python -m bot.main
 
 ### Docker
 ```bash
-# 1. Создать .env файл
-echo "BOT_TOKEN=your_telegram_bot_token" > .env
+# 1. Создать .env файл из примера
+cp .env.example .env
+# Отредактируй .env и добавь свой Telegram bot token
 
 # 2. Запустить контейнер
 docker compose up -d

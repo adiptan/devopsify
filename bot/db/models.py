@@ -9,9 +9,8 @@ SQLAlchemy models для DevOps Interview Bot
 """
 
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, ForeignKey, Text, JSON
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
-from datetime import datetime
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship
+from datetime import datetime, timezone
 import os
 
 Base = declarative_base()
@@ -43,7 +42,7 @@ class User(Base):
     
     user_id = Column(Integer, primary_key=True)
     username = Column(String(255), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     
     # Связи
     progress_records = relationship("Progress", back_populates="user")
@@ -63,7 +62,7 @@ class Progress(Base):
     solved = Column(Boolean, default=False)
     time_spent = Column(Integer, nullable=True)  # секунды
     attempts = Column(Integer, default=0)
-    last_attempt_at = Column(DateTime, default=datetime.utcnow)
+    last_attempt_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     
     # Связи
     user = relationship("User", back_populates="progress_records")
@@ -79,7 +78,7 @@ class MockSession(Base):
     
     session_id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
-    started_at = Column(DateTime, default=datetime.utcnow)
+    started_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     completed_at = Column(DateTime, nullable=True)
     score = Column(Integer, default=0)  # количество решённых задач
     total_tasks = Column(Integer, default=0)  # всего задач в сессии

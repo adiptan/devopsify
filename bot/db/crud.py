@@ -11,7 +11,7 @@ CRUD операции для DevOps Interview Bot
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import random
 
 from .models import Task, User, Progress, MockSession
@@ -97,7 +97,7 @@ def save_progress(
         if time_spent is not None:
             progress.time_spent = time_spent
         progress.attempts += 1
-        progress.last_attempt_at = datetime.utcnow()
+        progress.last_attempt_at = datetime.now(timezone.utc)
     else:
         progress = Progress(
             user_id=user_id,
@@ -151,7 +151,7 @@ def complete_mock_session(
     ).first()
     
     if mock_session:
-        mock_session.completed_at = datetime.utcnow()
+        mock_session.completed_at = datetime.now(timezone.utc)
         mock_session.score = score
         mock_session.total_tasks = total_tasks
         mock_session.average_time = average_time
