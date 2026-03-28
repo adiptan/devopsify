@@ -29,6 +29,33 @@ def get_or_create_user(session: Session, user_id: int, username: Optional[str] =
     return user
 
 
+def update_user_settings(session: Session, user_id: int, training_enabled: Optional[bool] = None, learning_enabled: Optional[bool] = None) -> User:
+    """Обновить настройки пользователя"""
+    user = session.query(User).filter(User.user_id == user_id).first()
+    if not user:
+        return None
+    
+    if training_enabled is not None:
+        user.training_enabled = training_enabled
+    if learning_enabled is not None:
+        user.learning_enabled = learning_enabled
+    
+    session.commit()
+    return user
+
+
+def get_user_settings(session: Session, user_id: int) -> dict:
+    """Получить настройки пользователя"""
+    user = session.query(User).filter(User.user_id == user_id).first()
+    if not user:
+        return {'training_enabled': False, 'learning_enabled': False}
+    
+    return {
+        'training_enabled': user.training_enabled,
+        'learning_enabled': user.learning_enabled
+    }
+
+
 # ============= TASKS =============
 
 def load_tasks_from_json(session: Session, json_data: List[dict]):

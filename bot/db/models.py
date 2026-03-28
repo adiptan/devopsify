@@ -43,6 +43,8 @@ class User(Base):
     user_id = Column(Integer, primary_key=True)
     username = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    training_enabled = Column(Boolean, default=False)  # Режим тренировки (раз в час)
+    learning_enabled = Column(Boolean, default=False)  # Режим обучения (лекции)
     
     # Связи
     progress_records = relationship("Progress", back_populates="user")
