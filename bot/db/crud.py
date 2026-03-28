@@ -56,6 +56,42 @@ def get_user_settings(session: Session, user_id: int) -> dict:
     }
 
 
+def update_learning_progress(session: Session, user_id: int, topic: str, card_num: int) -> User:
+    """Обновить прогресс обучения пользователя (карусель карточек)"""
+    user = session.query(User).filter(User.user_id == user_id).first()
+    if not user:
+        return None
+    
+    user.learning_topic = topic
+    user.learning_card = card_num
+    session.commit()
+    return user
+
+
+def get_learning_progress(session: Session, user_id: int) -> dict:
+    """Получить прогресс обучения пользователя"""
+    user = session.query(User).filter(User.user_id == user_id).first()
+    if not user:
+        return {'topic': None, 'card': 1}
+    
+    return {
+        'topic': user.learning_topic,
+        'card': user.learning_card or 1
+    }
+
+
+def reset_learning_progress(session: Session, user_id: int, topic: str) -> User:
+    """Сбросить прогресс обучения (начать тему сначала)"""
+    user = session.query(User).filter(User.user_id == user_id).first()
+    if not user:
+        return None
+    
+    user.learning_topic = topic
+    user.learning_card = 1
+    session.commit()
+    return user
+
+
 # ============= TASKS =============
 
 def load_tasks_from_json(session: Session, json_data: List[dict]):

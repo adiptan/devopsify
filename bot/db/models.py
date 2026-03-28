@@ -45,6 +45,8 @@ class User(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     training_enabled = Column(Boolean, default=False)  # Режим тренировки (раз в час)
     learning_enabled = Column(Boolean, default=False)  # Режим обучения (лекции)
+    learning_topic = Column(String(20), nullable=True)  # Текущая тема обучения (nginx, bash, k8s, git, docker)
+    learning_card = Column(Integer, default=1)  # Номер текущей карточки в теме
     
     # Связи
     progress_records = relationship("Progress", back_populates="user")
