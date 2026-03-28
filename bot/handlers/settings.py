@@ -11,7 +11,18 @@ from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKe
 from aiogram.filters import Command
 
 from ..db.models import get_session
-from ..db.crud import get_or_create_user, update_user_settings, get_user_settings
+from ..db.crud import get_or_create_user, update_user_settings, get_user_settings, is_auto_training_enabled
+
+
+def frequency_to_text(freq: str) -> str:
+    """Преобразовать частоту в читаемый текст"""
+    mapping = {
+        'hourly': 'Каждый час',
+        'daily': 'Раз в день',
+        'twice_daily': '2 раза в день',
+        'thrice_daily': '3 раза в день'
+    }
+    return mapping.get(freq, freq)
 
 router = Router()
 
@@ -22,11 +33,19 @@ async def cmd_settings(message: Message):
     session = get_session()
     user = get_or_create_user(session, message.from_user.id, message.from_user.username)
     settings = get_user_settings(session, user.user_id)
+    
+    # Проверить статус автоматической рассылки
+    auto_enabled, auto_frequency = is_auto_training_enabled(session, user.user_id)
+    
     session.close()
     
     # Кнопки с текущим состоянием
     training_text = "ВКЛ ✅" if settings['training_enabled'] else "ВЫКЛ"
     learning_text = "ВКЛ ✅" if settings['learning_enabled'] else "ВЫКЛ"
+    
+    auto_status = "✅ Включено" if auto_enabled else "❌ Отключено"
+    if auto_enabled:
+        auto_status += f" ({frequency_to_text(auto_frequency)})"
     
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [
@@ -40,6 +59,12 @@ async def cmd_settings(message: Message):
                 text=f"📚 Обучение: {learning_text}",
                 callback_data="toggle_learning"
             )
+        ],
+        [
+            InlineKeyboardButton(
+                text=f"📬 Автоматическая рассылка: {auto_status}",
+                callback_data="training_auto:menu"
+            )
         ]
     ])
     
@@ -49,7 +74,9 @@ async def cmd_settings(message: Message):
         "Отправляет случайную задачу раз в час.\n\n"
         f"📚 <b>Обучение:</b> {learning_text}\n"
         "Интерактивные лекции по темам DevOps.\n\n"
-        "Нажми на кнопку чтобы переключить режим.",
+        f"📬 <b>Автоматическая рассылка:</b> {auto_status}\n"
+        "Настраиваемая частота отправки задач.\n\n"
+        "Нажми на кнопку чтобы изменить настройки.",
         reply_markup=keyboard,
         parse_mode="HTML"
     )
@@ -68,10 +95,15 @@ async def toggle_training(callback: CallbackQuery):
     
     # Обновить кнопки
     settings = get_user_settings(session, user_id)
+    auto_enabled, auto_frequency = is_auto_training_enabled(session, user_id)
     session.close()
     
     training_text = "ВКЛ ✅" if settings['training_enabled'] else "ВЫКЛ"
     learning_text = "ВКЛ ✅" if settings['learning_enabled'] else "ВЫКЛ"
+    
+    auto_status = "✅ Включено" if auto_enabled else "❌ Отключено"
+    if auto_enabled:
+        auto_status += f" ({frequency_to_text(auto_frequency)})"
     
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [
@@ -85,6 +117,12 @@ async def toggle_training(callback: CallbackQuery):
                 text=f"📚 Обучение: {learning_text}",
                 callback_data="toggle_learning"
             )
+        ],
+        [
+            InlineKeyboardButton(
+                text=f"📬 Автоматическая рассылка: {auto_status}",
+                callback_data="training_auto:menu"
+            )
         ]
     ])
     
@@ -97,7 +135,9 @@ async def toggle_training(callback: CallbackQuery):
         "Отправляет случайную задачу раз в час.\n\n"
         f"📚 <b>Обучение:</b> {learning_text}\n"
         "Интерактивные лекции по темам DevOps.\n\n"
-        "Нажми на кнопку чтобы переключить режим.",
+        f"📬 <b>Автоматическая рассылка:</b> {auto_status}\n"
+        "Настраиваемая частота отправки задач.\n\n"
+        "Нажми на кнопку чтобы изменить настройки.",
         reply_markup=keyboard,
         parse_mode="HTML"
     )
@@ -116,10 +156,15 @@ async def toggle_learning(callback: CallbackQuery):
     
     # Обновить кнопки
     settings = get_user_settings(session, user_id)
+    auto_enabled, auto_frequency = is_auto_training_enabled(session, user_id)
     session.close()
     
     training_text = "ВКЛ ✅" if settings['training_enabled'] else "ВЫКЛ"
     learning_text = "ВКЛ ✅" if settings['learning_enabled'] else "ВЫКЛ"
+    
+    auto_status = "✅ Включено" if auto_enabled else "❌ Отключено"
+    if auto_enabled:
+        auto_status += f" ({frequency_to_text(auto_frequency)})"
     
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [
@@ -133,6 +178,12 @@ async def toggle_learning(callback: CallbackQuery):
                 text=f"📚 Обучение: {learning_text}",
                 callback_data="toggle_learning"
             )
+        ],
+        [
+            InlineKeyboardButton(
+                text=f"📬 Автоматическая рассылка: {auto_status}",
+                callback_data="training_auto:menu"
+            )
         ]
     ])
     
@@ -145,7 +196,9 @@ async def toggle_learning(callback: CallbackQuery):
         "Отправляет случайную задачу раз в час.\n\n"
         f"📚 <b>Обучение:</b> {learning_text}\n"
         "Интерактивные лекции по темам DevOps.\n\n"
-        "Нажми на кнопку чтобы переключить режим.",
+        f"📬 <b>Автоматическая рассылка:</b> {auto_status}\n"
+        "Настраиваемая частота отправки задач.\n\n"
+        "Нажми на кнопку чтобы изменить настройки.",
         reply_markup=keyboard,
         parse_mode="HTML"
     )
