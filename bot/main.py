@@ -17,7 +17,7 @@ from aiogram.types import Message
 from aiogram.client.default import DefaultBotProperties
 
 # Импорт handlers
-from .handlers import training, mock_interview, learning, settings
+from .handlers import training, mock_interview, learning, settings, training_auto
 
 # Импорт БД
 from .db import initialize_database, get_session
@@ -72,22 +72,36 @@ async def cmd_help(message: Message):
     """Обработчик команды /help"""
     await message.answer(
         "<b>📚 Команды бота:</b>\n\n"
+        
         "<b>Тренировка:</b>\n"
         "• /training — Включить режим тренировки\n"
         "• /task — Получить задачу сейчас\n\n"
+        
         "<b>Обучение:</b>\n"
-        "• /learning — Интерактивные лекции по темам\n\n"
+        "• /learning — Интерактивные лекции по темам\n"
+        "• /nginx [N] — N-я карточка Nginx (пример: /nginx 5)\n"
+        "• /bash [N] — N-я карточка Bash\n"
+        "• /k8s [N] — N-я карточка Kubernetes\n"
+        "• /git [N] — N-я карточка Git\n"
+        "• /docker [N] — N-я карточка Docker\n\n"
+        
         "<b>Мок-собес:</b>\n"
         "• /mock_interview — Запустить мок-собес (30 мин)\n"
         "• /next_task — Следующая задача в собесе\n\n"
+        
         "<b>Настройки:</b>\n"
         "• /settings — Управление режимами\n\n"
+        
+        "<b>💡 Автоматическая рассылка:</b>\n"
+        "Настрой в /learning или /settings — получай задачи автоматически!\n\n"
+        
         "<b>Категории задач:</b>\n"
         "• Nginx (10 задач)\n"
         "• Bash/CLI (15 задач)\n"
         "• Kubernetes (10 задач)\n"
         "• Git (10 задач)\n"
         "• Docker (5 задач)\n\n"
+        
         "<b>Сложность:</b> Junior, Middle, Senior\n\n"
         "Удачи на собесах! 💪"
     )
@@ -126,10 +140,10 @@ async def main():
     dp.include_router(mock_interview.router)
     dp.include_router(learning.router)
     dp.include_router(settings.router)
+    dp.include_router(training_auto.router)
     
-    # Настроить планировщик (пока пустой список пользователей)
-    # В продакшене можно хранить подписанных пользователей в БД
-    scheduler = setup_scheduler(bot, user_ids=[])
+    # Настроить планировщик (загрузит пользователей из БД автоматически)
+    scheduler = setup_scheduler(bot)
     scheduler.start()
     logger.info("Scheduler started")
     
