@@ -21,7 +21,8 @@ from ..db.crud import (
     get_or_create_user,
     update_learning_progress,
     get_learning_progress,
-    reset_learning_progress
+    reset_learning_progress,
+    is_auto_training_enabled
 )
 
 router = Router()
@@ -111,11 +112,32 @@ def format_card_message(topic_data: dict, card: dict, card_num: int, total_cards
     return message
 
 
+def frequency_to_text(freq: str) -> str:
+    """Преобразовать частоту в читаемый текст"""
+    mapping = {
+        'hourly': 'Каждый час',
+        'daily': 'Раз в день',
+        'twice_daily': '2 раза в день',
+        'thrice_daily': '3 раза в день'
+    }
+    return mapping.get(freq, freq)
+
+
 @router.message(Command("learning"))
 async def cmd_learning(message: Message):
     """Запустить режим обучения (выбор темы)"""
     session = get_session()
     user = get_or_create_user(session, message.from_user.id, message.from_user.username)
+    
+    # Проверить статус автоматической рассылки
+    enabled, frequency = is_auto_training_enabled(session, user.user_id)
+    
+    # Статус рассылки для кнопки
+    if enabled:
+        status_text = f"📬 Рассылка: ✅ {frequency_to_text(frequency)}"
+    else:
+        status_text = "📬 Рассылка: ❌ Выкл"
+    
     session.close()
     
     # Кнопки выбора темы
@@ -130,6 +152,9 @@ async def cmd_learning(message: Message):
         ],
         [
             InlineKeyboardButton(text="🐳 Docker", callback_data="learn_docker")
+        ],
+        [
+            InlineKeyboardButton(text=status_text, callback_data="training_auto:menu")
         ]
     ])
     
@@ -201,7 +226,57 @@ async def handle_carousel_action(callback: CallbackQuery):
     
     if action == "menu":
         # Вернуться в главное меню
-        await cmd_learning(callback.message)
+        session = get_session()
+        user = get_or_create_user(session, callback.from_user.id, callback.from_user.username)
+        
+        # Проверить статус автоматической рассылки
+        enabled, frequency = is_auto_training_enabled(session, user.user_id)
+        
+        # Статус рассылки для кнопки
+        if enabled:
+            status_text = f"📬 Рассылка: ✅ {frequency_to_text(frequency)}"
+        else:
+            status_text = "📬 Рассылка: ❌ Выкл"
+        
+        session.close()
+        
+        # Кнопки выбора темы
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(text="🌐 Nginx", callback_data="learn_nginx"),
+                InlineKeyboardButton(text="⚡ Bash", callback_data="learn_bash")
+            ],
+            [
+                InlineKeyboardButton(text="☸️ Kubernetes", callback_data="learn_kubernetes"),
+                InlineKeyboardButton(text="🔀 Git", callback_data="learn_git")
+            ],
+            [
+                InlineKeyboardButton(text="🐳 Docker", callback_data="learn_docker")
+            ],
+            [
+                InlineKeyboardButton(text=status_text, callback_data="training_auto:menu")
+            ]
+        ])
+        
+        await callback.message.edit_text(
+            "📚 <b>Режим обучения</b>\n\n"
+            "Выбери тему для изучения:\n\n"
+            "• <b>Nginx</b> — 10 карточек (от установки до best practices)\n"
+            "• <b>Bash</b> — 15 карточек (команды, скрипты, автоматизация)\n"
+            "• <b>Kubernetes</b> — 10 карточек (архитектура, поды, деплойменты)\n"
+            "• <b>Git</b> — 10 карточек (основы, ветки, merge/rebase)\n"
+            "• <b>Docker</b> — 10 карточек (контейнеры, образы, compose)\n\n"
+            "Каждая тема включает:\n"
+            "✅ Карусель теоретических карточек\n"
+            "✅ Навигация ⬅️ ➡️\n"
+            "✅ Практические задачи после теории\n\n"
+            "Также доступны команды для быстрого перехода:\n"
+            "<code>/nginx 5</code> — 5-я карточка Nginx\n"
+            "<code>/bash 10</code> — 10-я карточка Bash\n"
+            "<code>/k8s 3</code> — 3-я карточка Kubernetes",
+            reply_markup=keyboard,
+            parse_mode="HTML"
+        )
         await callback.answer()
         return
     
