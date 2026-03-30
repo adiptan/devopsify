@@ -20,7 +20,7 @@ class Task(Base):
     """Задачи для тренировки и мок-собеса"""
     __tablename__ = 'tasks'
     
-    id = Column(Integer, primary_key=True)
+    id = Column(String(50), primary_key=True)
     category = Column(String(50), nullable=False)  # nginx, bash, k8s, git, docker
     difficulty = Column(String(20), nullable=False)  # junior, middle, senior
     question = Column(Text, nullable=False)
@@ -64,7 +64,7 @@ class Progress(Base):
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
-    task_id = Column(Integer, ForeignKey('tasks.id'), nullable=False)
+    task_id = Column(String(50), ForeignKey('tasks.id'), nullable=False)
     solved = Column(Boolean, default=False)
     time_spent = Column(Integer, nullable=True)  # секунды
     attempts = Column(Integer, default=0)
