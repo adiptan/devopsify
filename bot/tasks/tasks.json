@@ -7,7 +7,10 @@
     "time_limit": 300,
     "solution": "awk '{print $1}' /var/log/nginx/access.log | sort | uniq -c | sort -rn | head -5",
     "explanation": "awk извлекает первый столбец (IP), sort сортирует, uniq -c считает повторения, sort -rn сортирует по числам в обратном порядке, head -5 выдаёт топ 5",
-    "hints": ["Используй awk для извлечения IP", "Не забудь sort и uniq -c"]
+    "hints": [
+      "Используй awk для извлечения IP",
+      "Не забудь sort и uniq -c"
+    ]
   },
   {
     "id": 2,
@@ -17,7 +20,10 @@
     "time_limit": 300,
     "solution": "awk -v date=$(date -d '1 hour ago' '+%d/%b/%Y:%H') '$4 ~ date && $9 == 404' /var/log/nginx/access.log",
     "explanation": "awk фильтрует логи: $4 содержит timestamp, $9 — HTTP код. Переменная date содержит время час назад",
-    "hints": ["Используй awk с условием", "4-я колонка — время, 9-я — HTTP код"]
+    "hints": [
+      "Используй awk с условием",
+      "4-я колонка — время, 9-я — HTTP код"
+    ]
   },
   {
     "id": 3,
@@ -27,7 +33,10 @@
     "time_limit": 240,
     "solution": "awk -F'\"' '{print $6}' /var/log/nginx/access.log | sort -u | wc -l",
     "explanation": "awk с разделителем \" извлекает User-Agent (6-е поле), sort -u оставляет уникальные, wc -l считает строки",
-    "hints": ["User-Agent находится в кавычках", "Используй awk -F для смены разделителя"]
+    "hints": [
+      "User-Agent находится в кавычках",
+      "Используй awk -F для смены разделителя"
+    ]
   },
   {
     "id": 4,
@@ -37,7 +46,10 @@
     "time_limit": 120,
     "solution": "tail -n 20 /var/log/nginx/error.log",
     "explanation": "tail -n 20 выводит последние 20 строк файла",
-    "hints": ["Команда tail", "Флаг -n для количества строк"]
+    "hints": [
+      "Команда tail",
+      "Флаг -n для количества строк"
+    ]
   },
   {
     "id": 5,
@@ -47,7 +59,10 @@
     "time_limit": 300,
     "solution": "awk '{print $NF, $0}' /var/log/nginx/access.log | sort -rn | head -1 | cut -d' ' -f2-",
     "explanation": "$NF — последнее поле (время обработки), выводим его вперёд для сортировки, затем убираем после сортировки",
-    "hints": ["$NF — последнее поле", "Отсортируй по времени"]
+    "hints": [
+      "$NF — последнее поле",
+      "Отсортируй по времени"
+    ]
   },
   {
     "id": 6,
@@ -57,7 +72,10 @@
     "time_limit": 360,
     "solution": "awk '{sum+=$NF; count++} END {print sum/count}' /var/log/nginx/access.log",
     "explanation": "awk суммирует последнее поле ($NF = request_time), считает количество строк, в END выводит среднее",
-    "hints": ["Используй awk для суммирования", "END блок для финального вывода"]
+    "hints": [
+      "Используй awk для суммирования",
+      "END блок для финального вывода"
+    ]
   },
   {
     "id": 7,
@@ -67,7 +85,10 @@
     "time_limit": 420,
     "solution": "awk -v date=$(date -d '1 hour ago' '+%d/%b/%Y:%H') '$4 ~ date {print $1}' /var/log/nginx/access.log | sort | uniq -c | awk '$1 > 1000 {print $2}'",
     "explanation": "Фильтруем по времени, извлекаем IP, считаем повторения, фильтруем >1000",
-    "hints": ["Комбинируй несколько awk", "Сначала фильтруй по времени"]
+    "hints": [
+      "Комбинируй несколько awk",
+      "Сначала фильтруй по времени"
+    ]
   },
   {
     "id": 8,
@@ -77,7 +98,10 @@
     "time_limit": 300,
     "solution": "awk '{print $7}' /var/log/nginx/access.log | cut -d'?' -f1 | sort | uniq -c | sort -rn | head -10",
     "explanation": "$7 — это URL, cut -d'?' -f1 убирает параметры, затем считаем и сортируем",
-    "hints": ["7-я колонка — URL", "Убери GET параметры через cut"]
+    "hints": [
+      "7-я колонка — URL",
+      "Убери GET параметры через cut"
+    ]
   },
   {
     "id": 9,
@@ -87,7 +111,10 @@
     "time_limit": 60,
     "solution": "nginx -t",
     "explanation": "nginx -t проверяет синтаксис конфигурационных файлов без перезагрузки сервера",
-    "hints": ["Флаг -t", "Не нужен systemctl"]
+    "hints": [
+      "Флаг -t",
+      "Не нужен systemctl"
+    ]
   },
   {
     "id": 10,
@@ -97,7 +124,10 @@
     "time_limit": 90,
     "solution": "nginx -s reload",
     "explanation": "nginx -s reload делает graceful reload: новые воркеры запускаются, старые завершаются после обработки текущих запросов",
-    "hints": ["Флаг -s", "Команда reload"]
+    "hints": [
+      "Флаг -s",
+      "Команда reload"
+    ]
   },
   {
     "id": 11,
@@ -107,7 +137,10 @@
     "time_limit": 120,
     "solution": "find . -name '*.log'",
     "explanation": "find с флагом -name ищет файлы по паттерну. Точка означает текущую директорию",
-    "hints": ["Команда find", "Флаг -name для поиска по имени"]
+    "hints": [
+      "Команда find",
+      "Флаг -name для поиска по имени"
+    ]
   },
   {
     "id": 12,
@@ -117,7 +150,10 @@
     "time_limit": 180,
     "solution": "find /var/log -type f -size +100M",
     "explanation": "find с флагами -type f (только файлы) и -size +100M (больше 100 мегабайт)",
-    "hints": ["Флаг -size", "M = мегабайты"]
+    "hints": [
+      "Флаг -size",
+      "M = мегабайты"
+    ]
   },
   {
     "id": 13,
@@ -127,7 +163,10 @@
     "time_limit": 240,
     "solution": "find /tmp -type f -mtime +30 -delete",
     "explanation": "find с -mtime +30 (старше 30 дней) и -delete для удаления. Осторожно с этой командой!",
-    "hints": ["Флаг -mtime для времени модификации", "Флаг -delete"]
+    "hints": [
+      "Флаг -mtime для времени модификации",
+      "Флаг -delete"
+    ]
   },
   {
     "id": 14,
@@ -137,7 +176,10 @@
     "time_limit": 60,
     "solution": "head -n 10 /etc/passwd",
     "explanation": "head выводит начало файла, -n 10 указывает количество строк",
-    "hints": ["Команда head", "Флаг -n"]
+    "hints": [
+      "Команда head",
+      "Флаг -n"
+    ]
   },
   {
     "id": 15,
@@ -147,7 +189,10 @@
     "time_limit": 120,
     "solution": "grep -c ERROR /var/log/app.log",
     "explanation": "grep -c считает количество строк, содержащих паттерн",
-    "hints": ["Команда grep", "Флаг -c для подсчёта"]
+    "hints": [
+      "Команда grep",
+      "Флаг -c для подсчёта"
+    ]
   },
   {
     "id": 16,
@@ -157,7 +202,10 @@
     "time_limit": 180,
     "solution": "lsof -i :80",
     "explanation": "lsof (list open files) с флагом -i :80 показывает процессы, слушающие порт 80",
-    "hints": ["Команда lsof", "Флаг -i для сетевых соединений"]
+    "hints": [
+      "Команда lsof",
+      "Флаг -i для сетевых соединений"
+    ]
   },
   {
     "id": 17,
@@ -167,7 +215,10 @@
     "time_limit": 240,
     "solution": "ps aux --sort=-%cpu | head -6",
     "explanation": "ps aux выводит все процессы, --sort=-%cpu сортирует по CPU (% убывание), head -6 берёт шапку + топ 5",
-    "hints": ["Команда ps aux", "Флаг --sort"]
+    "hints": [
+      "Команда ps aux",
+      "Флаг --sort"
+    ]
   },
   {
     "id": 18,
@@ -177,7 +228,10 @@
     "time_limit": 120,
     "solution": "df -h",
     "explanation": "df (disk free) показывает использование дисков, -h (human-readable) в MB/GB",
-    "hints": ["Команда df", "Флаг -h"]
+    "hints": [
+      "Команда df",
+      "Флаг -h"
+    ]
   },
   {
     "id": 19,
@@ -187,7 +241,10 @@
     "time_limit": 120,
     "solution": "du -sh /var/log",
     "explanation": "du (disk usage) показывает размер, -s (summary) только итог, -h (human-readable)",
-    "hints": ["Команда du", "Флаги -s и -h"]
+    "hints": [
+      "Команда du",
+      "Флаги -s и -h"
+    ]
   },
   {
     "id": 20,
@@ -197,7 +254,10 @@
     "time_limit": 240,
     "solution": "sed -i 's/old_text/new_text/g' config.yml",
     "explanation": "sed -i редактирует файл на месте, s/old/new/g заменяет все (g = global) вхождения",
-    "hints": ["Команда sed", "Флаг -i для редактирования in-place"]
+    "hints": [
+      "Команда sed",
+      "Флаг -i для редактирования in-place"
+    ]
   },
   {
     "id": 21,
@@ -207,7 +267,10 @@
     "time_limit": 120,
     "solution": "curl -o output.txt https://example.com/file.txt",
     "explanation": "curl -o сохраняет результат в указанный файл",
-    "hints": ["Команда curl", "Флаг -o для output"]
+    "hints": [
+      "Команда curl",
+      "Флаг -o для output"
+    ]
   },
   {
     "id": 22,
@@ -217,7 +280,10 @@
     "time_limit": 180,
     "solution": "tar -czf app.tar.gz /app",
     "explanation": "tar с флагами: -c (create), -z (gzip), -f (file). Порядок флагов важен!",
-    "hints": ["Команда tar", "Флаги -czf"]
+    "hints": [
+      "Команда tar",
+      "Флаги -czf"
+    ]
   },
   {
     "id": 23,
@@ -227,7 +293,10 @@
     "time_limit": 120,
     "solution": "tar -xzf archive.tar.gz",
     "explanation": "tar -xzf: -x (extract), -z (gzip), -f (file)",
-    "hints": ["Команда tar", "Флаг -x для extract"]
+    "hints": [
+      "Команда tar",
+      "Флаг -x для extract"
+    ]
   },
   {
     "id": 24,
@@ -237,7 +306,10 @@
     "time_limit": 300,
     "solution": "curl -X POST -H 'Content-Type: application/json' -d '{\"key\":\"value\"}' https://api.example.com/endpoint",
     "explanation": "curl -X POST указывает метод, -H добавляет заголовок, -d передаёт тело запроса",
-    "hints": ["Флаг -X для метода", "Флаг -d для данных"]
+    "hints": [
+      "Флаг -X для метода",
+      "Флаг -d для данных"
+    ]
   },
   {
     "id": 25,
@@ -247,7 +319,10 @@
     "time_limit": 90,
     "solution": "tail -f /var/log/app.log",
     "explanation": "tail -f (follow) выводит новые строки по мере их появления в файле",
-    "hints": ["Команда tail", "Флаг -f"]
+    "hints": [
+      "Команда tail",
+      "Флаг -f"
+    ]
   },
   {
     "id": 26,
@@ -257,7 +332,10 @@
     "time_limit": 90,
     "solution": "kubectl get pods -n production",
     "explanation": "kubectl get pods выводит список подов, -n указывает namespace",
-    "hints": ["kubectl get pods", "Флаг -n для namespace"]
+    "hints": [
+      "kubectl get pods",
+      "Флаг -n для namespace"
+    ]
   },
   {
     "id": 27,
@@ -267,7 +345,10 @@
     "time_limit": 120,
     "solution": "kubectl logs my-app --tail=100",
     "explanation": "kubectl logs выводит логи, --tail=100 ограничивает последними 100 строками",
-    "hints": ["kubectl logs", "Флаг --tail"]
+    "hints": [
+      "kubectl logs",
+      "Флаг --tail"
+    ]
   },
   {
     "id": 28,
@@ -277,7 +358,10 @@
     "time_limit": 120,
     "solution": "kubectl exec -it my-app -- /bin/bash",
     "explanation": "kubectl exec -it запускает интерактивный терминал внутри контейнера",
-    "hints": ["kubectl exec", "Флаги -it для интерактивного режима"]
+    "hints": [
+      "kubectl exec",
+      "Флаги -it для интерактивного режима"
+    ]
   },
   {
     "id": 29,
@@ -287,7 +371,10 @@
     "time_limit": 60,
     "solution": "kubectl apply -f deployment.yaml",
     "explanation": "kubectl apply -f применяет конфигурацию из YAML файла",
-    "hints": ["kubectl apply", "Флаг -f для файла"]
+    "hints": [
+      "kubectl apply",
+      "Флаг -f для файла"
+    ]
   },
   {
     "id": 30,
@@ -297,7 +384,10 @@
     "time_limit": 120,
     "solution": "kubectl scale deployment my-app --replicas=5",
     "explanation": "kubectl scale изменяет количество реплик deployment",
-    "hints": ["kubectl scale", "Флаг --replicas"]
+    "hints": [
+      "kubectl scale",
+      "Флаг --replicas"
+    ]
   },
   {
     "id": 31,
@@ -307,7 +397,10 @@
     "time_limit": 180,
     "solution": "kubectl top pods --all-namespaces",
     "explanation": "kubectl top pods показывает метрики использования, --all-namespaces для всех namespace",
-    "hints": ["kubectl top", "Флаг --all-namespaces"]
+    "hints": [
+      "kubectl top",
+      "Флаг --all-namespaces"
+    ]
   },
   {
     "id": 32,
@@ -317,7 +410,10 @@
     "time_limit": 120,
     "solution": "kubectl delete pod my-app --force --grace-period=0",
     "explanation": "--force и --grace-period=0 удаляют под немедленно без graceful shutdown",
-    "hints": ["kubectl delete", "Флаги --force и --grace-period"]
+    "hints": [
+      "kubectl delete",
+      "Флаги --force и --grace-period"
+    ]
   },
   {
     "id": 33,
@@ -327,7 +423,10 @@
     "time_limit": 90,
     "solution": "kubectl get services --all-namespaces",
     "explanation": "kubectl get services выводит все Service объекты",
-    "hints": ["kubectl get services", "Флаг --all-namespaces"]
+    "hints": [
+      "kubectl get services",
+      "Флаг --all-namespaces"
+    ]
   },
   {
     "id": 34,
@@ -337,7 +436,10 @@
     "time_limit": 120,
     "solution": "kubectl get pod my-app -o yaml",
     "explanation": "-o yaml выводит полную конфигурацию объекта в формате YAML",
-    "hints": ["kubectl get", "Флаг -o yaml"]
+    "hints": [
+      "kubectl get",
+      "Флаг -o yaml"
+    ]
   },
   {
     "id": 35,
@@ -347,7 +449,10 @@
     "time_limit": 120,
     "solution": "kubectl rollout restart deployment my-app",
     "explanation": "kubectl rollout restart делает rolling restart: постепенно пересоздаёт поды",
-    "hints": ["kubectl rollout", "Команда restart"]
+    "hints": [
+      "kubectl rollout",
+      "Команда restart"
+    ]
   },
   {
     "id": 36,
@@ -357,7 +462,10 @@
     "time_limit": 60,
     "solution": "git clone https://github.com/user/repo.git",
     "explanation": "git clone скачивает репозиторий по URL",
-    "hints": ["git clone", "Нужен URL репозитория"]
+    "hints": [
+      "git clone",
+      "Нужен URL репозитория"
+    ]
   },
   {
     "id": 37,
@@ -367,7 +475,9 @@
     "time_limit": 60,
     "solution": "git status",
     "explanation": "git status показывает состояние рабочей директории и staging area",
-    "hints": ["Команда git status"]
+    "hints": [
+      "Команда git status"
+    ]
   },
   {
     "id": 38,
@@ -377,7 +487,10 @@
     "time_limit": 60,
     "solution": "git add .",
     "explanation": "git add . добавляет все изменённые файлы в staging area для коммита",
-    "hints": ["git add", "Точка означает все файлы"]
+    "hints": [
+      "git add",
+      "Точка означает все файлы"
+    ]
   },
   {
     "id": 39,
@@ -387,7 +500,10 @@
     "time_limit": 90,
     "solution": "git commit -m 'Fix bug'",
     "explanation": "git commit -m создаёт коммит с указанным сообщением",
-    "hints": ["git commit", "Флаг -m для сообщения"]
+    "hints": [
+      "git commit",
+      "Флаг -m для сообщения"
+    ]
   },
   {
     "id": 40,
@@ -397,7 +513,9 @@
     "time_limit": 90,
     "solution": "git push",
     "explanation": "git push отправляет коммиты в удалённый репозиторий",
-    "hints": ["Команда git push"]
+    "hints": [
+      "Команда git push"
+    ]
   },
   {
     "id": 41,
@@ -407,7 +525,10 @@
     "time_limit": 120,
     "solution": "git checkout -b feature/new-feature",
     "explanation": "git checkout -b создаёт новую ветку и сразу переключается на неё",
-    "hints": ["git checkout", "Флаг -b для создания"]
+    "hints": [
+      "git checkout",
+      "Флаг -b для создания"
+    ]
   },
   {
     "id": 42,
@@ -417,7 +538,10 @@
     "time_limit": 180,
     "solution": "git checkout main && git merge feature",
     "explanation": "Сначала переключаемся на main, затем мёржим feature",
-    "hints": ["Сначала checkout main", "Потом merge"]
+    "hints": [
+      "Сначала checkout main",
+      "Потом merge"
+    ]
   },
   {
     "id": 43,
@@ -427,7 +551,10 @@
     "time_limit": 120,
     "solution": "git log --oneline",
     "explanation": "git log --oneline показывает каждый коммит в одну строку (хеш + сообщение)",
-    "hints": ["git log", "Флаг --oneline"]
+    "hints": [
+      "git log",
+      "Флаг --oneline"
+    ]
   },
   {
     "id": 44,
@@ -437,7 +564,11 @@
     "time_limit": 180,
     "solution": "git reset --soft HEAD~1",
     "explanation": "git reset --soft откатывает коммит, но оставляет изменения в staging",
-    "hints": ["git reset", "Флаг --soft", "HEAD~1 = предыдущий коммит"]
+    "hints": [
+      "git reset",
+      "Флаг --soft",
+      "HEAD~1 = предыдущий коммит"
+    ]
   },
   {
     "id": 45,
@@ -447,7 +578,10 @@
     "time_limit": 180,
     "solution": "git diff main..feature",
     "explanation": "git diff main..feature показывает изменения между двумя ветками",
-    "hints": ["git diff", "Используй .. между ветками"]
+    "hints": [
+      "git diff",
+      "Используй .. между ветками"
+    ]
   },
   {
     "id": 46,
@@ -457,7 +591,10 @@
     "time_limit": 90,
     "solution": "docker run -d nginx",
     "explanation": "docker run запускает контейнер, -d (detached) в фоновом режиме",
-    "hints": ["docker run", "Флаг -d для фона"]
+    "hints": [
+      "docker run",
+      "Флаг -d для фона"
+    ]
   },
   {
     "id": 47,
@@ -467,7 +604,9 @@
     "time_limit": 60,
     "solution": "docker ps",
     "explanation": "docker ps показывает список запущенных контейнеров",
-    "hints": ["Команда docker ps"]
+    "hints": [
+      "Команда docker ps"
+    ]
   },
   {
     "id": 48,
@@ -477,7 +616,10 @@
     "time_limit": 180,
     "solution": "docker stop $(docker ps -aq) && docker rm $(docker ps -aq)",
     "explanation": "docker ps -aq выводит ID всех контейнеров, $() подставляет их в команды stop и rm",
-    "hints": ["docker ps -aq для всех ID", "Комбинируй stop и rm"]
+    "hints": [
+      "docker ps -aq для всех ID",
+      "Комбинируй stop и rm"
+    ]
   },
   {
     "id": 49,
@@ -487,7 +629,10 @@
     "time_limit": 120,
     "solution": "docker build -t my-app:v1 .",
     "explanation": "docker build создаёт образ, -t задаёт тег, точка указывает на текущую директорию с Dockerfile",
-    "hints": ["docker build", "Флаг -t для тега"]
+    "hints": [
+      "docker build",
+      "Флаг -t для тега"
+    ]
   },
   {
     "id": 50,
@@ -497,6 +642,308 @@
     "time_limit": 90,
     "solution": "docker logs my-container",
     "explanation": "docker logs выводит stdout/stderr контейнера",
-    "hints": ["Команда docker logs"]
+    "hints": [
+      "Команда docker logs"
+    ]
+  },
+  {
+    "id": "tcpip_task_1",
+    "category": "tcpip",
+    "difficulty": "easy",
+    "question": "Сколько шагов в TCP three-way handshake?",
+    "solution": "3 шага: SYN → SYN-ACK → ACK",
+    "explanation": "Правильный ответ: 3 шага: SYN → SYN-ACK → ACK",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: флаги TCP называются SYN и ACK"
+    ]
+  },
+  {
+    "id": "tcpip_task_2",
+    "category": "tcpip",
+    "difficulty": "easy",
+    "question": "Что означает ошибка \"Connection refused\"?",
+    "solution": "Хост доступен, но порт закрыт. Сервер отправил RST пакет. Пример: nginx не запущен.",
+    "explanation": "Правильный ответ: Хост доступен, но порт закрыт. Сервер отправил RST пакет. Пример: nginx не запущен.",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: отличается от timeout — ответ приходит мгновенно"
+    ]
+  },
+  {
+    "id": "tcpip_task_3",
+    "category": "tcpip",
+    "difficulty": "medium",
+    "question": "Когда TCP отправляет пакет с флагом RST?",
+    "solution": "При экстренном завершении соединения: порт закрыт (connection refused), timeout истёк, приложение крашнулось.",
+    "explanation": "Правильный ответ: При экстренном завершении соединения: порт закрыт (connection refused), timeout истёк, приложение крашнулось.",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: RST = Reset (экстренный обрыв)"
+    ]
+  },
+  {
+    "id": "tcpip_task_4",
+    "category": "tcpip",
+    "difficulty": "medium",
+    "question": "Почему DNS обычно использует UDP, а не TCP?",
+    "solution": "UDP быстрее (нет overhead на handshake). Для DNS скорость важнее гарантии доставки. Если пакет потерялся — клиент повторит запрос.",
+    "explanation": "Правильный ответ: UDP быстрее (нет overhead на handshake). Для DNS скорость важнее гарантии доставки. Если пакет потерялся — клиент повторит запрос.",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: DNS запросы маленькие и допускают потерю пакетов"
+    ]
+  },
+  {
+    "id": "tcpip_task_5",
+    "category": "tcpip",
+    "difficulty": "medium",
+    "question": "Что такое ephemeral ports и для чего они используются?",
+    "solution": "Временные порты (49152-65535), выделяемые ОС для исходящих соединений клиента. Пример: браузер подключается к серверу с порта 54321.",
+    "explanation": "Правильный ответ: Временные порты (49152-65535), выделяемые ОС для исходящих соединений клиента. Пример: браузер подключается к серверу с порта 54321.",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: клиент тоже должен иметь порт для соединения"
+    ]
+  },
+  {
+    "id": "systemd_task_1",
+    "category": "systemd",
+    "difficulty": "easy",
+    "question": "Как проверить статус nginx через systemd?",
+    "solution": "systemctl status nginx",
+    "explanation": "Правильный ответ: systemctl status nginx",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: команда systemctl"
+    ]
+  },
+  {
+    "id": "systemd_task_2",
+    "category": "systemd",
+    "difficulty": "easy",
+    "question": "Как включить автозапуск сервиса при загрузке системы?",
+    "solution": "systemctl enable <service>\n\nПример: systemctl enable nginx",
+    "explanation": "Правильный ответ: systemctl enable <service>\n\nПример: systemctl enable nginx",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: команда systemctl enable"
+    ]
+  },
+  {
+    "id": "systemd_task_3",
+    "category": "systemd",
+    "difficulty": "easy",
+    "question": "Как посмотреть последние 50 строк логов nginx через journalctl?",
+    "solution": "journalctl -u nginx -n 50",
+    "explanation": "Правильный ответ: journalctl -u nginx -n 50",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: ключ -n для количества строк"
+    ]
+  },
+  {
+    "id": "systemd_task_4",
+    "category": "systemd",
+    "difficulty": "medium",
+    "question": "Как найти все сервисы в состоянии failed?",
+    "solution": "systemctl list-units --state=failed\n\nили короче:\nsystemctl --failed",
+    "explanation": "Правильный ответ: systemctl list-units --state=failed\n\nили короче:\nsystemctl --failed",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: systemctl list-units с фильтром по состоянию"
+    ]
+  },
+  {
+    "id": "systemd_task_5",
+    "category": "systemd",
+    "difficulty": "medium",
+    "question": "После изменения unit файла нужно перезагрузить конфиги systemd. Какая команда?",
+    "solution": "systemctl daemon-reload",
+    "explanation": "Правильный ответ: systemctl daemon-reload",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: команда содержит слово reload"
+    ]
+  },
+  {
+    "id": "network_utils_task_1",
+    "category": "network_utils",
+    "difficulty": "easy",
+    "question": "Как узнать какой процесс слушает порт 80? (2 способа)",
+    "solution": "Способ 1: sudo ss -tlnp | grep :80\nСпособ 2: sudo lsof -i :80\n\nОба показывают процесс и PID.",
+    "explanation": "Правильный ответ: Способ 1: sudo ss -tlnp | grep :80\nСпособ 2: sudo lsof -i :80\n\nОба показывают процесс и PID.",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: утилиты ss или lsof"
+    ]
+  },
+  {
+    "id": "network_utils_task_2",
+    "category": "network_utils",
+    "difficulty": "easy",
+    "question": "Как посмотреть таблицу маршрутизации? (2 способа)",
+    "solution": "Способ 1 (современный): ip route show\nСпособ 2 (старый): netstat -r",
+    "explanation": "Правильный ответ: Способ 1 (современный): ip route show\nСпособ 2 (старый): netstat -r",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: команды ip или netstat"
+    ]
+  },
+  {
+    "id": "network_utils_task_3",
+    "category": "network_utils",
+    "difficulty": "medium",
+    "question": "Как захватить весь HTTP трафик на всех интерфейсах через tcpdump?",
+    "solution": "sudo tcpdump -i any port 80",
+    "explanation": "Правильный ответ: sudo tcpdump -i any port 80",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: порт HTTP = 80, интерфейс any = все"
+    ]
+  },
+  {
+    "id": "network_utils_task_4",
+    "category": "network_utils",
+    "difficulty": "easy",
+    "question": "Как посмотреть IP адреса всех сетевых интерфейсов современной командой?",
+    "solution": "ip addr show\n\nили короче:\nip a",
+    "explanation": "Правильный ответ: ip addr show\n\nили короче:\nip a",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: команда ip (не ifconfig!)"
+    ]
+  },
+  {
+    "id": "network_utils_task_5",
+    "category": "network_utils",
+    "difficulty": "medium",
+    "question": "Как посмотреть все сетевые соединения процесса с PID 1234?",
+    "solution": "lsof -i -a -p 1234\n\n-i = сетевые соединения\n-a = AND (комбинация условий)\n-p = PID",
+    "explanation": "Правильный ответ: lsof -i -a -p 1234\n\n-i = сетевые соединения\n-a = AND (комбинация условий)\n-p = PID",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: lsof с ключами -i -a -p"
+    ]
+  },
+  {
+    "id": "linux_files_task_1",
+    "category": "linux_files",
+    "difficulty": "medium",
+    "question": "В каком файле настраивается очерёдность поиска DNS/hosts?",
+    "solution": "/etc/nsswitch.conf\n\nСтрока hosts: files dns означает:\n1. Сначала /etc/hosts\n2. Потом DNS",
+    "explanation": "Правильный ответ: /etc/nsswitch.conf\n\nСтрока hosts: files dns означает:\n1. Сначала /etc/hosts\n2. Потом DNS",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: Name Service Switch"
+    ]
+  },
+  {
+    "id": "linux_files_task_2",
+    "category": "linux_files",
+    "difficulty": "easy",
+    "question": "Где находится список DNS серверов?",
+    "solution": "/etc/resolv.conf\n\nПример:\nnameserver 8.8.8.8\nnameserver 1.1.1.1",
+    "explanation": "Правильный ответ: /etc/resolv.conf\n\nПример:\nnameserver 8.8.8.8\nnameserver 1.1.1.1",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: файл содержит слово resolv"
+    ]
+  },
+  {
+    "id": "linux_files_task_3",
+    "category": "linux_files",
+    "difficulty": "easy",
+    "question": "Как добавить статическую DNS запись для хоста myserver с IP 192.168.1.100?",
+    "solution": "echo \"192.168.1.100 myserver\" | sudo tee -a /etc/hosts\n\nПосле этого ping myserver будет работать.",
+    "explanation": "Правильный ответ: echo \"192.168.1.100 myserver\" | sudo tee -a /etc/hosts\n\nПосле этого ping myserver будет работать.",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: файл /etc/hosts"
+    ]
+  },
+  {
+    "id": "linux_files_task_4",
+    "category": "linux_files",
+    "difficulty": "easy",
+    "question": "Как посмотреть информацию о CPU через виртуальную ФС /proc/?",
+    "solution": "cat /proc/cpuinfo\n\nПокажет: модель, количество ядер, частоту и т.д.",
+    "explanation": "Правильный ответ: cat /proc/cpuinfo\n\nПокажет: модель, количество ядер, частоту и т.д.",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: файл cpuinfo в /proc/"
+    ]
+  },
+  {
+    "id": "linux_files_task_5",
+    "category": "linux_files",
+    "difficulty": "medium",
+    "question": "Как посмотреть список открытых файлов процесса через /proc/?",
+    "solution": "ls -l /proc/<PID>/fd/\n\nПример:\nls -l /proc/1234/fd/",
+    "explanation": "Правильный ответ: ls -l /proc/<PID>/fd/\n\nПример:\nls -l /proc/1234/fd/",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: директория fd внутри /proc/<PID>/"
+    ]
+  },
+  {
+    "id": "http_methods_task_1",
+    "category": "http_methods",
+    "difficulty": "easy",
+    "question": "Какой HTTP метод используется для удаления ресурса?",
+    "solution": "DELETE\n\nПример:\ncurl -X DELETE https://api.example.com/users/123",
+    "explanation": "Правильный ответ: DELETE\n\nПример:\ncurl -X DELETE https://api.example.com/users/123",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: название говорит само за себя"
+    ]
+  },
+  {
+    "id": "http_methods_task_2",
+    "category": "http_methods",
+    "difficulty": "medium",
+    "question": "В чём разница между PUT и PATCH?",
+    "solution": "PUT — заменяет весь ресурс (все поля)\nPATCH — обновляет только указанные поля\n\nПример:\nPUT {\"name\":\"John\"} → удалит остальные поля\nPATCH {\"name\":\"John\"} → обновит только name",
+    "explanation": "Правильный ответ: PUT — заменяет весь ресурс (все поля)\nPATCH — обновляет только указанные поля\n\nПример:\nPUT {\"name\":\"John\"} → удалит остальные поля\nPATCH {\"name\":\"John\"} → обновит только name",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: PUT = полная замена, PATCH = частичное обновление"
+    ]
+  },
+  {
+    "id": "http_methods_task_3",
+    "category": "http_methods",
+    "difficulty": "medium",
+    "question": "Какие HTTP методы являются идемпотентными?",
+    "solution": "GET, PUT, DELETE, HEAD, OPTIONS\n\nИдемпотентный = повторные вызовы дают тот же результат.\n\nНЕ идемпотентные: POST, PATCH",
+    "explanation": "Правильный ответ: GET, PUT, DELETE, HEAD, OPTIONS\n\nИдемпотентный = повторные вызовы дают тот же результат.\n\nНЕ идемпотентные: POST, PATCH",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: методы, которые можно безопасно повторять"
+    ]
+  },
+  {
+    "id": "http_methods_task_4",
+    "category": "http_methods",
+    "difficulty": "easy",
+    "question": "Где передаются параметры в GET запросе?",
+    "solution": "В URL (query string)\n\nПример:\nhttps://api.example.com/users?name=John&age=30\n\nВ POST — в теле запроса.",
+    "explanation": "Правильный ответ: В URL (query string)\n\nПример:\nhttps://api.example.com/users?name=John&age=30\n\nВ POST — в теле запроса.",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: параметры видны в адресной строке браузера"
+    ]
+  },
+  {
+    "id": "http_methods_task_5",
+    "category": "http_methods",
+    "difficulty": "medium",
+    "question": "Для чего используется HTTP метод HEAD?",
+    "solution": "HEAD возвращает только заголовки ответа (без тела).\n\nИспользуется для:\n- Проверки существования ресурса\n- Получения размера файла (Content-Length)\n- Проверки даты изменения (Last-Modified)\n\nПример:\ncurl -I https://example.com",
+    "explanation": "Правильный ответ: HEAD возвращает только заголовки ответа (без тела).\n\nИспользуется для:\n- Проверки существования ресурса\n- Получения размера файла (Content-Length)\n- Проверки даты изменения (Last-Modified)\n\nПример:\ncurl -I https://example.com",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: как GET, но без body"
+    ]
   }
 ]
