@@ -649,226 +649,301 @@
   {
     "id": "tcpip_task_1",
     "category": "tcpip",
-    "title": "TCP handshake",
+    "difficulty": "easy",
     "question": "Сколько шагов в TCP three-way handshake?",
-    "answer": "3 шага: SYN → SYN-ACK → ACK",
-    "hint": "Подсказка: флаги TCP называются SYN и ACK",
-    "difficulty": "easy"
+    "solution": "3 шага: SYN → SYN-ACK → ACK",
+    "explanation": "Правильный ответ: 3 шага: SYN → SYN-ACK → ACK",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: флаги TCP называются SYN и ACK"
+    ]
   },
   {
     "id": "tcpip_task_2",
     "category": "tcpip",
-    "title": "Connection refused",
+    "difficulty": "easy",
     "question": "Что означает ошибка \"Connection refused\"?",
-    "answer": "Хост доступен, но порт закрыт. Сервер отправил RST пакет. Пример: nginx не запущен.",
-    "hint": "Подсказка: отличается от timeout — ответ приходит мгновенно",
-    "difficulty": "easy"
+    "solution": "Хост доступен, но порт закрыт. Сервер отправил RST пакет. Пример: nginx не запущен.",
+    "explanation": "Правильный ответ: Хост доступен, но порт закрыт. Сервер отправил RST пакет. Пример: nginx не запущен.",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: отличается от timeout — ответ приходит мгновенно"
+    ]
   },
   {
     "id": "tcpip_task_3",
     "category": "tcpip",
-    "title": "TCP флаг RST",
+    "difficulty": "medium",
     "question": "Когда TCP отправляет пакет с флагом RST?",
-    "answer": "При экстренном завершении соединения: порт закрыт (connection refused), timeout истёк, приложение крашнулось.",
-    "hint": "Подсказка: RST = Reset (экстренный обрыв)",
-    "difficulty": "medium"
+    "solution": "При экстренном завершении соединения: порт закрыт (connection refused), timeout истёк, приложение крашнулось.",
+    "explanation": "Правильный ответ: При экстренном завершении соединения: порт закрыт (connection refused), timeout истёк, приложение крашнулось.",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: RST = Reset (экстренный обрыв)"
+    ]
   },
   {
     "id": "tcpip_task_4",
     "category": "tcpip",
-    "title": "TCP vs UDP",
+    "difficulty": "medium",
     "question": "Почему DNS обычно использует UDP, а не TCP?",
-    "answer": "UDP быстрее (нет overhead на handshake). Для DNS скорость важнее гарантии доставки. Если пакет потерялся — клиент повторит запрос.",
-    "hint": "Подсказка: DNS запросы маленькие и допускают потерю пакетов",
-    "difficulty": "medium"
+    "solution": "UDP быстрее (нет overhead на handshake). Для DNS скорость важнее гарантии доставки. Если пакет потерялся — клиент повторит запрос.",
+    "explanation": "Правильный ответ: UDP быстрее (нет overhead на handshake). Для DNS скорость важнее гарантии доставки. Если пакет потерялся — клиент повторит запрос.",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: DNS запросы маленькие и допускают потерю пакетов"
+    ]
   },
   {
     "id": "tcpip_task_5",
     "category": "tcpip",
-    "title": "Ephemeral ports",
+    "difficulty": "medium",
     "question": "Что такое ephemeral ports и для чего они используются?",
-    "answer": "Временные порты (49152-65535), выделяемые ОС для исходящих соединений клиента. Пример: браузер подключается к серверу с порта 54321.",
-    "hint": "Подсказка: клиент тоже должен иметь порт для соединения",
-    "difficulty": "medium"
+    "solution": "Временные порты (49152-65535), выделяемые ОС для исходящих соединений клиента. Пример: браузер подключается к серверу с порта 54321.",
+    "explanation": "Правильный ответ: Временные порты (49152-65535), выделяемые ОС для исходящих соединений клиента. Пример: браузер подключается к серверу с порта 54321.",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: клиент тоже должен иметь порт для соединения"
+    ]
   },
   {
     "id": "systemd_task_1",
     "category": "systemd",
-    "title": "Статус сервиса",
+    "difficulty": "easy",
     "question": "Как проверить статус nginx через systemd?",
-    "answer": "systemctl status nginx",
-    "hint": "Подсказка: команда systemctl",
-    "difficulty": "easy"
+    "solution": "systemctl status nginx",
+    "explanation": "Правильный ответ: systemctl status nginx",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: команда systemctl"
+    ]
   },
   {
     "id": "systemd_task_2",
     "category": "systemd",
-    "title": "Автозапуск сервиса",
+    "difficulty": "easy",
     "question": "Как включить автозапуск сервиса при загрузке системы?",
-    "answer": "systemctl enable <service>\n\nПример: systemctl enable nginx",
-    "hint": "Подсказка: команда systemctl enable",
-    "difficulty": "easy"
+    "solution": "systemctl enable <service>\n\nПример: systemctl enable nginx",
+    "explanation": "Правильный ответ: systemctl enable <service>\n\nПример: systemctl enable nginx",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: команда systemctl enable"
+    ]
   },
   {
     "id": "systemd_task_3",
     "category": "systemd",
-    "title": "Логи сервиса",
+    "difficulty": "easy",
     "question": "Как посмотреть последние 50 строк логов nginx через journalctl?",
-    "answer": "journalctl -u nginx -n 50",
-    "hint": "Подсказка: ключ -n для количества строк",
-    "difficulty": "easy"
+    "solution": "journalctl -u nginx -n 50",
+    "explanation": "Правильный ответ: journalctl -u nginx -n 50",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: ключ -n для количества строк"
+    ]
   },
   {
     "id": "systemd_task_4",
     "category": "systemd",
-    "title": "Failed сервисы",
+    "difficulty": "medium",
     "question": "Как найти все сервисы в состоянии failed?",
-    "answer": "systemctl list-units --state=failed\n\nили короче:\nsystemctl --failed",
-    "hint": "Подсказка: systemctl list-units с фильтром по состоянию",
-    "difficulty": "medium"
+    "solution": "systemctl list-units --state=failed\n\nили короче:\nsystemctl --failed",
+    "explanation": "Правильный ответ: systemctl list-units --state=failed\n\nили короче:\nsystemctl --failed",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: systemctl list-units с фильтром по состоянию"
+    ]
   },
   {
     "id": "systemd_task_5",
     "category": "systemd",
-    "title": "Перезагрузка конфига systemd",
+    "difficulty": "medium",
     "question": "После изменения unit файла нужно перезагрузить конфиги systemd. Какая команда?",
-    "answer": "systemctl daemon-reload",
-    "hint": "Подсказка: команда содержит слово reload",
-    "difficulty": "medium"
+    "solution": "systemctl daemon-reload",
+    "explanation": "Правильный ответ: systemctl daemon-reload",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: команда содержит слово reload"
+    ]
   },
   {
     "id": "network_utils_task_1",
     "category": "network_utils",
-    "title": "Кто слушает порт",
+    "difficulty": "easy",
     "question": "Как узнать какой процесс слушает порт 80? (2 способа)",
-    "answer": "Способ 1: sudo ss -tlnp | grep :80\nСпособ 2: sudo lsof -i :80\n\nОба показывают процесс и PID.",
-    "hint": "Подсказка: утилиты ss или lsof",
-    "difficulty": "easy"
+    "solution": "Способ 1: sudo ss -tlnp | grep :80\nСпособ 2: sudo lsof -i :80\n\nОба показывают процесс и PID.",
+    "explanation": "Правильный ответ: Способ 1: sudo ss -tlnp | grep :80\nСпособ 2: sudo lsof -i :80\n\nОба показывают процесс и PID.",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: утилиты ss или lsof"
+    ]
   },
   {
     "id": "network_utils_task_2",
     "category": "network_utils",
-    "title": "Routing table",
+    "difficulty": "easy",
     "question": "Как посмотреть таблицу маршрутизации? (2 способа)",
-    "answer": "Способ 1 (современный): ip route show\nСпособ 2 (старый): netstat -r",
-    "hint": "Подсказка: команды ip или netstat",
-    "difficulty": "easy"
+    "solution": "Способ 1 (современный): ip route show\nСпособ 2 (старый): netstat -r",
+    "explanation": "Правильный ответ: Способ 1 (современный): ip route show\nСпособ 2 (старый): netstat -r",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: команды ip или netstat"
+    ]
   },
   {
     "id": "network_utils_task_3",
     "category": "network_utils",
-    "title": "Захват HTTP трафика",
+    "difficulty": "medium",
     "question": "Как захватить весь HTTP трафик на всех интерфейсах через tcpdump?",
-    "answer": "sudo tcpdump -i any port 80",
-    "hint": "Подсказка: порт HTTP = 80, интерфейс any = все",
-    "difficulty": "medium"
+    "solution": "sudo tcpdump -i any port 80",
+    "explanation": "Правильный ответ: sudo tcpdump -i any port 80",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: порт HTTP = 80, интерфейс any = все"
+    ]
   },
   {
     "id": "network_utils_task_4",
     "category": "network_utils",
-    "title": "IP адреса интерфейсов",
+    "difficulty": "easy",
     "question": "Как посмотреть IP адреса всех сетевых интерфейсов современной командой?",
-    "answer": "ip addr show\n\nили короче:\nip a",
-    "hint": "Подсказка: команда ip (не ifconfig!)",
-    "difficulty": "easy"
+    "solution": "ip addr show\n\nили короче:\nip a",
+    "explanation": "Правильный ответ: ip addr show\n\nили короче:\nip a",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: команда ip (не ifconfig!)"
+    ]
   },
   {
     "id": "network_utils_task_5",
     "category": "network_utils",
-    "title": "Сетевые соединения процесса",
+    "difficulty": "medium",
     "question": "Как посмотреть все сетевые соединения процесса с PID 1234?",
-    "answer": "lsof -i -a -p 1234\n\n-i = сетевые соединения\n-a = AND (комбинация условий)\n-p = PID",
-    "hint": "Подсказка: lsof с ключами -i -a -p",
-    "difficulty": "medium"
+    "solution": "lsof -i -a -p 1234\n\n-i = сетевые соединения\n-a = AND (комбинация условий)\n-p = PID",
+    "explanation": "Правильный ответ: lsof -i -a -p 1234\n\n-i = сетевые соединения\n-a = AND (комбинация условий)\n-p = PID",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: lsof с ключами -i -a -p"
+    ]
   },
   {
     "id": "linux_files_task_1",
     "category": "linux_files",
-    "title": "Очерёдность DNS/hosts",
+    "difficulty": "medium",
     "question": "В каком файле настраивается очерёдность поиска DNS/hosts?",
-    "answer": "/etc/nsswitch.conf\n\nСтрока hosts: files dns означает:\n1. Сначала /etc/hosts\n2. Потом DNS",
-    "hint": "Подсказка: Name Service Switch",
-    "difficulty": "medium"
+    "solution": "/etc/nsswitch.conf\n\nСтрока hosts: files dns означает:\n1. Сначала /etc/hosts\n2. Потом DNS",
+    "explanation": "Правильный ответ: /etc/nsswitch.conf\n\nСтрока hosts: files dns означает:\n1. Сначала /etc/hosts\n2. Потом DNS",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: Name Service Switch"
+    ]
   },
   {
     "id": "linux_files_task_2",
     "category": "linux_files",
-    "title": "DNS серверы",
+    "difficulty": "easy",
     "question": "Где находится список DNS серверов?",
-    "answer": "/etc/resolv.conf\n\nПример:\nnameserver 8.8.8.8\nnameserver 1.1.1.1",
-    "hint": "Подсказка: файл содержит слово resolv",
-    "difficulty": "easy"
+    "solution": "/etc/resolv.conf\n\nПример:\nnameserver 8.8.8.8\nnameserver 1.1.1.1",
+    "explanation": "Правильный ответ: /etc/resolv.conf\n\nПример:\nnameserver 8.8.8.8\nnameserver 1.1.1.1",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: файл содержит слово resolv"
+    ]
   },
   {
     "id": "linux_files_task_3",
     "category": "linux_files",
-    "title": "Статический DNS",
+    "difficulty": "easy",
     "question": "Как добавить статическую DNS запись для хоста myserver с IP 192.168.1.100?",
-    "answer": "echo \"192.168.1.100 myserver\" | sudo tee -a /etc/hosts\n\nПосле этого ping myserver будет работать.",
-    "hint": "Подсказка: файл /etc/hosts",
-    "difficulty": "easy"
+    "solution": "echo \"192.168.1.100 myserver\" | sudo tee -a /etc/hosts\n\nПосле этого ping myserver будет работать.",
+    "explanation": "Правильный ответ: echo \"192.168.1.100 myserver\" | sudo tee -a /etc/hosts\n\nПосле этого ping myserver будет работать.",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: файл /etc/hosts"
+    ]
   },
   {
     "id": "linux_files_task_4",
     "category": "linux_files",
-    "title": "Информация о CPU",
+    "difficulty": "easy",
     "question": "Как посмотреть информацию о CPU через виртуальную ФС /proc/?",
-    "answer": "cat /proc/cpuinfo\n\nПокажет: модель, количество ядер, частоту и т.д.",
-    "hint": "Подсказка: файл cpuinfo в /proc/",
-    "difficulty": "easy"
+    "solution": "cat /proc/cpuinfo\n\nПокажет: модель, количество ядер, частоту и т.д.",
+    "explanation": "Правильный ответ: cat /proc/cpuinfo\n\nПокажет: модель, количество ядер, частоту и т.д.",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: файл cpuinfo в /proc/"
+    ]
   },
   {
     "id": "linux_files_task_5",
     "category": "linux_files",
-    "title": "Открытые файлы процесса",
+    "difficulty": "medium",
     "question": "Как посмотреть список открытых файлов процесса через /proc/?",
-    "answer": "ls -l /proc/<PID>/fd/\n\nПример:\nls -l /proc/1234/fd/",
-    "hint": "Подсказка: директория fd внутри /proc/<PID>/",
-    "difficulty": "medium"
+    "solution": "ls -l /proc/<PID>/fd/\n\nПример:\nls -l /proc/1234/fd/",
+    "explanation": "Правильный ответ: ls -l /proc/<PID>/fd/\n\nПример:\nls -l /proc/1234/fd/",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: директория fd внутри /proc/<PID>/"
+    ]
   },
   {
     "id": "http_methods_task_1",
     "category": "http_methods",
-    "title": "DELETE метод",
+    "difficulty": "easy",
     "question": "Какой HTTP метод используется для удаления ресурса?",
-    "answer": "DELETE\n\nПример:\ncurl -X DELETE https://api.example.com/users/123",
-    "hint": "Подсказка: название говорит само за себя",
-    "difficulty": "easy"
+    "solution": "DELETE\n\nПример:\ncurl -X DELETE https://api.example.com/users/123",
+    "explanation": "Правильный ответ: DELETE\n\nПример:\ncurl -X DELETE https://api.example.com/users/123",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: название говорит само за себя"
+    ]
   },
   {
     "id": "http_methods_task_2",
     "category": "http_methods",
-    "title": "PUT vs PATCH",
+    "difficulty": "medium",
     "question": "В чём разница между PUT и PATCH?",
-    "answer": "PUT — заменяет весь ресурс (все поля)\nPATCH — обновляет только указанные поля\n\nПример:\nPUT {\"name\":\"John\"} → удалит остальные поля\nPATCH {\"name\":\"John\"} → обновит только name",
-    "hint": "Подсказка: PUT = полная замена, PATCH = частичное обновление",
-    "difficulty": "medium"
+    "solution": "PUT — заменяет весь ресурс (все поля)\nPATCH — обновляет только указанные поля\n\nПример:\nPUT {\"name\":\"John\"} → удалит остальные поля\nPATCH {\"name\":\"John\"} → обновит только name",
+    "explanation": "Правильный ответ: PUT — заменяет весь ресурс (все поля)\nPATCH — обновляет только указанные поля\n\nПример:\nPUT {\"name\":\"John\"} → удалит остальные поля\nPATCH {\"name\":\"John\"} → обновит только name",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: PUT = полная замена, PATCH = частичное обновление"
+    ]
   },
   {
     "id": "http_methods_task_3",
     "category": "http_methods",
-    "title": "Идемпотентные методы",
+    "difficulty": "medium",
     "question": "Какие HTTP методы являются идемпотентными?",
-    "answer": "GET, PUT, DELETE, HEAD, OPTIONS\n\nИдемпотентный = повторные вызовы дают тот же результат.\n\nНЕ идемпотентные: POST, PATCH",
-    "hint": "Подсказка: методы, которые можно безопасно повторять",
-    "difficulty": "medium"
+    "solution": "GET, PUT, DELETE, HEAD, OPTIONS\n\nИдемпотентный = повторные вызовы дают тот же результат.\n\nНЕ идемпотентные: POST, PATCH",
+    "explanation": "Правильный ответ: GET, PUT, DELETE, HEAD, OPTIONS\n\nИдемпотентный = повторные вызовы дают тот же результат.\n\nНЕ идемпотентные: POST, PATCH",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: методы, которые можно безопасно повторять"
+    ]
   },
   {
     "id": "http_methods_task_4",
     "category": "http_methods",
-    "title": "GET параметры",
+    "difficulty": "easy",
     "question": "Где передаются параметры в GET запросе?",
-    "answer": "В URL (query string)\n\nПример:\nhttps://api.example.com/users?name=John&age=30\n\nВ POST — в теле запроса.",
-    "hint": "Подсказка: параметры видны в адресной строке браузера",
-    "difficulty": "easy"
+    "solution": "В URL (query string)\n\nПример:\nhttps://api.example.com/users?name=John&age=30\n\nВ POST — в теле запроса.",
+    "explanation": "Правильный ответ: В URL (query string)\n\nПример:\nhttps://api.example.com/users?name=John&age=30\n\nВ POST — в теле запроса.",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: параметры видны в адресной строке браузера"
+    ]
   },
   {
     "id": "http_methods_task_5",
     "category": "http_methods",
-    "title": "HEAD метод",
+    "difficulty": "medium",
     "question": "Для чего используется HTTP метод HEAD?",
-    "answer": "HEAD возвращает только заголовки ответа (без тела).\n\nИспользуется для:\n- Проверки существования ресурса\n- Получения размера файла (Content-Length)\n- Проверки даты изменения (Last-Modified)\n\nПример:\ncurl -I https://example.com",
-    "hint": "Подсказка: как GET, но без body",
-    "difficulty": "medium"
+    "solution": "HEAD возвращает только заголовки ответа (без тела).\n\nИспользуется для:\n- Проверки существования ресурса\n- Получения размера файла (Content-Length)\n- Проверки даты изменения (Last-Modified)\n\nПример:\ncurl -I https://example.com",
+    "explanation": "Правильный ответ: HEAD возвращает только заголовки ответа (без тела).\n\nИспользуется для:\n- Проверки существования ресурса\n- Получения размера файла (Content-Length)\n- Проверки даты изменения (Last-Modified)\n\nПример:\ncurl -I https://example.com",
+    "time_limit": 120,
+    "hints": [
+      "Подсказка: как GET, но без body"
+    ]
   }
 ]
