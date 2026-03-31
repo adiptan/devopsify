@@ -154,6 +154,17 @@ async def cmd_learning(message: Message):
             InlineKeyboardButton(text="🐳 Docker", callback_data="learn_docker")
         ],
         [
+            InlineKeyboardButton(text="🌐 TCP/IP", callback_data="learn_tcpip"),
+            InlineKeyboardButton(text="⚙️ systemd", callback_data="learn_systemd")
+        ],
+        [
+            InlineKeyboardButton(text="🔧 Network Utils", callback_data="learn_network_utils"),
+            InlineKeyboardButton(text="📁 Linux Files", callback_data="learn_linux_files")
+        ],
+        [
+            InlineKeyboardButton(text="🌍 HTTP Methods", callback_data="learn_http_methods")
+        ],
+        [
             InlineKeyboardButton(text=status_text, callback_data="training_auto:menu")
         ]
     ])
@@ -165,7 +176,12 @@ async def cmd_learning(message: Message):
         "• <b>Bash</b> — 15 карточек (команды, скрипты, автоматизация)\n"
         "• <b>Kubernetes</b> — 10 карточек (архитектура, поды, деплойменты)\n"
         "• <b>Git</b> — 10 карточек (основы, ветки, merge/rebase)\n"
-        "• <b>Docker</b> — 10 карточек (контейнеры, образы, compose)\n\n"
+        "• <b>Docker</b> — 10 карточек (контейнеры, образы, compose)\n"
+        "• <b>TCP/IP</b> — 5 карточек (handshake, UDP/TCP, ephemeral ports)\n"
+        "• <b>systemd</b> — 5 карточек (systemctl, journalctl, unit files)\n"
+        "• <b>Network Utils</b> — 5 карточек (ss, lsof, tcpdump, nc)\n"
+        "• <b>Linux Files</b> — 5 карточек (/etc/hosts, resolv.conf, /proc/)\n"
+        "• <b>HTTP Methods</b> — 5 карточек (GET, POST, PUT/PATCH, DELETE)\n\n"
         "Каждая тема включает:\n"
         "✅ Карусель теоретических карточек\n"
         "✅ Навигация ⬅️ ➡️\n"
@@ -173,7 +189,7 @@ async def cmd_learning(message: Message):
         "Также доступны команды для быстрого перехода:\n"
         "<code>/nginx 5</code> — 5-я карточка Nginx\n"
         "<code>/bash 10</code> — 10-я карточка Bash\n"
-        "<code>/k8s 3</code> — 3-я карточка Kubernetes",
+        "<code>/tcpip 3</code> — 3-я карточка TCP/IP",
         reply_markup=keyboard,
         parse_mode="HTML"
     )
@@ -254,6 +270,17 @@ async def handle_carousel_action(callback: CallbackQuery):
                 InlineKeyboardButton(text="🐳 Docker", callback_data="learn_docker")
             ],
             [
+                InlineKeyboardButton(text="🌐 TCP/IP", callback_data="learn_tcpip"),
+                InlineKeyboardButton(text="⚙️ systemd", callback_data="learn_systemd")
+            ],
+            [
+                InlineKeyboardButton(text="🔧 Network Utils", callback_data="learn_network_utils"),
+                InlineKeyboardButton(text="📁 Linux Files", callback_data="learn_linux_files")
+            ],
+            [
+                InlineKeyboardButton(text="🌍 HTTP Methods", callback_data="learn_http_methods")
+            ],
+            [
                 InlineKeyboardButton(text=status_text, callback_data="training_auto:menu")
             ]
         ])
@@ -265,7 +292,12 @@ async def handle_carousel_action(callback: CallbackQuery):
             "• <b>Bash</b> — 15 карточек (команды, скрипты, автоматизация)\n"
             "• <b>Kubernetes</b> — 10 карточек (архитектура, поды, деплойменты)\n"
             "• <b>Git</b> — 10 карточек (основы, ветки, merge/rebase)\n"
-            "• <b>Docker</b> — 10 карточек (контейнеры, образы, compose)\n\n"
+            "• <b>Docker</b> — 10 карточек (контейнеры, образы, compose)\n"
+            "• <b>TCP/IP</b> — 5 карточек (handshake, UDP/TCP, ephemeral ports)\n"
+            "• <b>systemd</b> — 5 карточек (systemctl, journalctl, unit files)\n"
+            "• <b>Network Utils</b> — 5 карточек (ss, lsof, tcpdump, nc)\n"
+            "• <b>Linux Files</b> — 5 карточек (/etc/hosts, resolv.conf, /proc/)\n"
+            "• <b>HTTP Methods</b> — 5 карточек (GET, POST, PUT/PATCH, DELETE)\n\n"
             "Каждая тема включает:\n"
             "✅ Карусель теоретических карточек\n"
             "✅ Навигация ⬅️ ➡️\n"
@@ -273,7 +305,7 @@ async def handle_carousel_action(callback: CallbackQuery):
             "Также доступны команды для быстрого перехода:\n"
             "<code>/nginx 5</code> — 5-я карточка Nginx\n"
             "<code>/bash 10</code> — 10-я карточка Bash\n"
-            "<code>/k8s 3</code> — 3-я карточка Kubernetes",
+            "<code>/tcpip 3</code> — 3-я карточка TCP/IP",
             reply_markup=keyboard,
             parse_mode="HTML"
         )
@@ -394,6 +426,36 @@ async def cmd_git_jump(message: Message):
 async def cmd_docker_jump(message: Message):
     """Быстрый переход к карточке Docker"""
     await jump_to_card(message, "docker")
+
+
+@router.message(Command("tcpip"))
+async def cmd_tcpip_jump(message: Message):
+    """Быстрый переход к карточке TCP/IP"""
+    await jump_to_card(message, "tcpip")
+
+
+@router.message(Command("systemd"))
+async def cmd_systemd_jump(message: Message):
+    """Быстрый переход к карточке systemd"""
+    await jump_to_card(message, "systemd")
+
+
+@router.message(Command("network"))
+async def cmd_network_jump(message: Message):
+    """Быстрый переход к карточке Network Utils"""
+    await jump_to_card(message, "network_utils")
+
+
+@router.message(Command("linuxfiles"))
+async def cmd_linuxfiles_jump(message: Message):
+    """Быстрый переход к карточке Linux Files"""
+    await jump_to_card(message, "linux_files")
+
+
+@router.message(Command("http"))
+async def cmd_http_jump(message: Message):
+    """Быстрый переход к карточке HTTP Methods"""
+    await jump_to_card(message, "http_methods")
 
 
 async def jump_to_card(message: Message, topic: str):

@@ -113,7 +113,11 @@
         ]
       }
     ],
-    "tasks": [1, 2, 3]
+    "tasks": [
+      1,
+      2,
+      3
+    ]
   },
   "bash": {
     "title": "Bash Scripting",
@@ -284,7 +288,11 @@
         ]
       }
     ],
-    "tasks": [11, 12, 13]
+    "tasks": [
+      11,
+      12,
+      13
+    ]
   },
   "kubernetes": {
     "title": "Kubernetes",
@@ -400,7 +408,11 @@
         ]
       }
     ],
-    "tasks": [21, 22, 23]
+    "tasks": [
+      21,
+      22,
+      23
+    ]
   },
   "git": {
     "title": "Git",
@@ -516,7 +528,11 @@
         ]
       }
     ],
-    "tasks": [31, 32, 33]
+    "tasks": [
+      31,
+      32,
+      33
+    ]
   },
   "docker": {
     "title": "Docker",
@@ -632,6 +648,315 @@
         ]
       }
     ],
-    "tasks": [41, 42, 43]
+    "tasks": [
+      41,
+      42,
+      43
+    ]
+  },
+  "tcpip": {
+    "title": "TCP/IP",
+    "cards": [
+      {
+        "id": 1,
+        "title": "TCP Three-Way Handshake",
+        "content": "TCP Three-Way Handshake — процесс установления соединения между клиентом и сервером. Состоит из трёх шагов (отсюда название three-way).\n\nШаг 1 (SYN): Клиент отправляет пакет с флагом SYN (synchronize) и начальным sequence number. Это запрос на установку соединения.\n\nШаг 2 (SYN-ACK): Сервер отвечает пакетом с флагами SYN и ACK (acknowledgment). Сервер подтверждает получение и отправляет свой sequence number.\n\nШаг 3 (ACK): Клиент отправляет ACK, подтверждая получение SYN-ACK от сервера. Соединение установлено, можно передавать данные.\n\nЭтот handshake гарантирует, что обе стороны готовы к передаче данных и согласовали начальные sequence numbers.",
+        "example": "# Посмотреть TCP handshake с tcpdump\nsudo tcpdump -i any port 80 -nn\n\n# Вывод при подключении:\n# 1. IP client > server: Flags [S] (SYN)\n# 2. IP server > client: Flags [S.] (SYN-ACK)\n# 3. IP client > server: Flags [.] (ACK)\n\n# Проверить активные TCP соединения\nss -tan\nnetstat -tan",
+        "key_points": [
+          "SYN → SYN-ACK → ACK — три шага установки соединения",
+          "Sequence numbers — для отслеживания порядка пакетов",
+          "После handshake — соединение готово к передаче данных"
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Connection Refused vs Timeout",
+        "content": "Connection Refused и Connection Timeout — две разные ошибки, которые часто путают.\n\nConnection Refused: Хост доступен, но порт закрыт. Сервер мгновенно отвечает RST (reset) пакетом. Причины: сервис не запущен (nginx остановлен), firewall блокирует порт, сервис слушает другой интерфейс (localhost вместо 0.0.0.0).\n\nConnection Timeout: Хост недоступен или пакеты не доходят. Клиент ждёт ответа, но не получает его. Причины: хост выключен, сетевой маршрут недоступен, firewall дропает пакеты (не отправляет RST), слишком высокий latency.\n\nОтличие: Refused — быстрый ответ (RST), Timeout — долгое ожидание без ответа.",
+        "example": "# Connection Refused (порт закрыт)\ncurl http://localhost:8080\n# curl: (7) Failed to connect to localhost port 8080: Connection refused\n\n# Connection Timeout (хост недоступен)\ncurl --max-time 5 http://192.168.999.999\n# curl: (28) Connection timed out after 5000 milliseconds\n\n# Проверить доступность порта\ntelnet example.com 80\nnc -zv example.com 80\n\n# Посмотреть какие порты слушаются\nsudo ss -tlnp\nsudo netstat -tlnp",
+        "key_points": [
+          "Refused — порт закрыт, мгновенный RST ответ",
+          "Timeout — хост недоступен, нет ответа вообще",
+          "telnet/nc — быстрая проверка доступности порта"
+        ]
+      },
+      {
+        "id": 3,
+        "title": "TCP RST: экстренный обрыв",
+        "content": "TCP RST (Reset) — пакет для экстренного завершения соединения. В отличие от нормального закрытия (FIN), RST обрывает соединение немедленно без согласования.\n\nКогда отправляется RST: порт закрыт (connection refused), приложение крашнулось во время соединения, превышен timeout соединения, firewall обрывает соединение, приложение вызвало close() с опцией SO_LINGER = 0.\n\nRST vs FIN: FIN — нормальное закрытие (graceful shutdown), обе стороны согласовывают завершение. RST — аварийное закрытие, соединение обрывается сразу, буферизованные данные теряются.\n\nПри получении RST приложение видит ошибку Connection reset by peer.",
+        "example": "# Увидеть RST в tcpdump\nsudo tcpdump -i any port 80 -nn\n# Flags [R] или [R.] = RST\n\n# Симулировать RST (закрыть соединение резко)\n# В Python:\nimport socket\nsock = socket.socket()\nsock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack('ii', 1, 0))\nsock.connect(('example.com', 80))\nsock.close()  # Отправит RST вместо FIN\n\n# Ошибка при получении RST\ncurl http://example.com\n# curl: (56) Recv failure: Connection reset by peer",
+        "key_points": [
+          "RST — экстренный обрыв соединения (не graceful)",
+          "Причины: порт закрыт, краш приложения, timeout",
+          "FIN — нормальное закрытие, RST — аварийное"
+        ]
+      },
+      {
+        "id": 4,
+        "title": "UDP vs TCP: когда что использовать",
+        "content": "UDP (User Datagram Protocol) — протокол без установки соединения, не гарантирует доставку. TCP (Transmission Control Protocol) — с установкой соединения, гарантирует доставку и порядок пакетов.\n\nUDP преимущества: быстрее (нет overhead на handshake), меньше latency, подходит для потоковых данных (видео, голос), где потеря пакетов допустима. Недостатки: нет гарантии доставки, нет контроля перегрузки.\n\nTCP преимущества: надёжность (повтор потерянных пакетов), порядок пакетов, контроль перегрузки. Недостатки: медленнее (handshake overhead), больше latency при потере пакетов (ожидание повтора).\n\nПримеры UDP: DNS (быстрые запросы), VoIP (Skype, Zoom), онлайн-игры (позиции игроков). Примеры TCP: HTTP/HTTPS, SSH, FTP, базы данных.",
+        "example": "# DNS обычно использует UDP (быстрее)\ndig @8.8.8.8 example.com\n\n# Но для больших ответов (>512 байт) переключается на TCP\ndig @8.8.8.8 example.com +tcp\n\n# Посмотреть UDP соединения\nss -uan\nnetstat -uan\n\n# Проверить UDP порт (nc)\nnc -u -zv example.com 53\n\n# Захватить UDP трафик\nsudo tcpdump -i any udp port 53",
+        "key_points": [
+          "UDP — быстро, без гарантий; TCP — надёжно, медленнее",
+          "DNS, VoIP, игры — UDP; HTTP, SSH, DB — TCP",
+          "UDP допускает потерю пакетов ради скорости"
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Ephemeral Ports: временные порты клиента",
+        "content": "Ephemeral Ports (эфемерные порты) — временные порты, которые ОС автоматически выделяет клиенту для исходящих соединений. Диапазон: обычно 49152-65535 (IANA рекомендация), но зависит от ОС (Linux: 32768-60999 по умолчанию).\n\nКак работает: клиент подключается к серверу (например, браузер к example.com:443). ОС выделяет клиенту случайный свободный порт из ephemeral range (например, 54321). Соединение: client:54321 → server:443.\n\nПосле закрытия соединения ephemeral порт освобождается и может быть переиспользован. Если исчерпан диапазон — новые соединения не смогут установиться (ошибка Cannot assign requested address).\n\nSYN flood атаки могут исчерпать ephemeral порты на сервере (сервер тоже использует их для обратных соединений).",
+        "example": "# Посмотреть диапазон ephemeral портов (Linux)\ncat /proc/sys/net/ipv4/ip_local_port_range\n# Вывод: 32768   60999\n\n# Изменить диапазон\nsudo sysctl -w net.ipv4.ip_local_port_range=\"10000 65000\"\n\n# Посмотреть активные соединения с ephemeral портами\nss -tan | grep ESTAB\n# Клиентские порты (высокие числа) → серверные (80, 443, 22)\n\n# Пример: браузер подключается к серверу\n# tcp   ESTAB   0   0   192.168.1.100:54321   93.184.216.34:443",
+        "key_points": [
+          "Ephemeral ports — временные порты для исходящих соединений",
+          "Диапазон: 32768-60999 (Linux default), 49152-65535 (IANA)",
+          "Клиент тоже должен иметь порт для TCP соединения"
+        ]
+      }
+    ],
+    "tasks": []
+  },
+  "systemd": {
+    "title": "systemd",
+    "cards": [
+      {
+        "id": 1,
+        "title": "Что такое systemd",
+        "content": "systemd — init система и service manager для Linux. Заменила старые init системы (SysVinit, Upstart). systemd управляет запуском, остановкой и мониторингом системных сервисов.\n\nПреимущества systemd: параллельный запуск сервисов (быстрая загрузка), управление зависимостями (сервис A запустится после сервиса B), автоматический перезапуск упавших сервисов, интеграция с логированием (journald), единый интерфейс управления (systemctl).\n\nОсновные компоненты: systemctl (CLI для управления), journalctl (просмотр логов), unit files (конфигурационные файлы сервисов), targets (аналог runlevels в SysVinit).\n\nUnit types: .service (сервисы), .socket (сокеты), .timer (планировщик, аналог cron), .mount (точки монтирования), .target (группы unit'ов).",
+        "example": "# Проверить статус сервиса\nsystemctl status nginx\n\n# Запустить/остановить/перезапустить\nsudo systemctl start nginx\nsudo systemctl stop nginx\nsudo systemctl restart nginx\n\n# Включить автозапуск при загрузке\nsudo systemctl enable nginx\n\n# Отключить автозапуск\nsudo systemctl disable nginx\n\n# Посмотреть все запущенные сервисы\nsystemctl list-units --type=service --state=running",
+        "key_points": [
+          "systemd — современная init система (заменила SysVinit)",
+          "systemctl — главная команда для управления сервисами",
+          "Автоматический перезапуск упавших сервисов"
+        ]
+      },
+      {
+        "id": 2,
+        "title": "systemctl: управление сервисами",
+        "content": "systemctl — главная команда для управления systemd. Основные действия: start (запустить), stop (остановить), restart (перезапустить), reload (перечитать конфиг без остановки), status (статус), enable (автозапуск), disable (отключить автозапуск).\n\nsystemctl enable создаёт символическую ссылку в /etc/systemd/system/, чтобы сервис запускался при загрузке. systemctl disable удаляет эту ссылку. Важно: enable/disable не запускает/останавливает сервис, только управляет автозапуском.\n\nПолезные команды: is-active (запущен ли сервис), is-enabled (включен ли автозапуск), is-failed (сервис упал?), daemon-reload (перечитать конфигурацию systemd после изменения unit файлов).",
+        "example": "# Запустить сервис\nsudo systemctl start nginx\n\n# Включить автозапуск (создаётся симлинк)\nsudo systemctl enable nginx\n# Вывод: Created symlink /etc/systemd/system/multi-user.target.wants/nginx.service\n\n# Запустить и включить автозапуск одной командой\nsudo systemctl enable --now nginx\n\n# Проверить статус\nsystemctl is-active nginx    # active или inactive\nsystemctl is-enabled nginx   # enabled или disabled\n\n# После изменения unit файла\nsudo systemctl daemon-reload",
+        "key_points": [
+          "start/stop — запуск/остановка, enable/disable — автозапуск",
+          "enable --now — включить автозапуск и запустить сразу",
+          "daemon-reload — обязателен после правки unit файлов"
+        ]
+      },
+      {
+        "id": 3,
+        "title": "journalctl: логи systemd",
+        "content": "journalctl — утилита для просмотра логов systemd (journald). Все логи сервисов хранятся централизованно в бинарном формате (эффективнее текстовых логов).\n\nОсновные опции: -u <service> (логи конкретного сервиса), -f (follow, мониторинг в реальном времени), -n N (последние N строк), --since/--until (фильтр по времени), -p <priority> (фильтр по приоритету: err, warning, info), -b (логи с последней загрузки).\n\nПриоритеты логов: emerg (0), alert (1), crit (2), err (3), warning (4), notice (5), info (6), debug (7). По умолчанию показываются все уровни.\n\nЛоги могут быть постоянными (persistent) или временными (volatile, в /run/log/journal/). Настраивается в /etc/systemd/journald.conf.",
+        "example": "# Логи nginx\njournalctl -u nginx\n\n# Последние 50 строк\njournalctl -u nginx -n 50\n\n# Мониторинг в реальном времени\njournalctl -u nginx -f\n\n# Логи за последний час\njournalctl -u nginx --since \"1 hour ago\"\n\n# Только ошибки\njournalctl -u nginx -p err\n\n# Логи с последней загрузки системы\njournalctl -b\n\n# Логи всех сервисов за сегодня\njournalctl --since today",
+        "key_points": [
+          "journalctl -u <service> — логи сервиса",
+          "-f — follow (real-time), -n N — последние N строк",
+          "--since/--until — фильтр по времени"
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Unit Files: конфигурация сервисов",
+        "content": "Unit files — конфигурационные файлы сервисов systemd. Обычно находятся в /etc/systemd/system/ (пользовательские) или /lib/systemd/system/ (системные, от пакетов).\n\nСтруктура unit file: секции [Unit] (описание, зависимости), [Service] (как запускать сервис), [Install] (куда привязать при enable).\n\n[Unit]: Description (описание), After/Before (порядок запуска относительно других сервисов), Requires/Wants (зависимости).\n\n[Service]: Type (тип сервиса: simple, forking, oneshot), ExecStart (команда запуска), ExecStop (команда остановки), Restart (политика перезапуска), User/Group (от какого пользователя запускать).\n\n[Install]: WantedBy (к какому target привязать, обычно multi-user.target).",
+        "example": "# Пример unit file: /etc/systemd/system/myapp.service\n[Unit]\nDescription=My Application\nAfter=network.target\n\n[Service]\nType=simple\nUser=myuser\nWorkingDirectory=/opt/myapp\nExecStart=/usr/bin/node /opt/myapp/server.js\nRestart=on-failure\nRestartSec=5s\n\n[Install]\nWantedBy=multi-user.target\n\n# После создания unit файла:\nsudo systemctl daemon-reload\nsudo systemctl start myapp\nsudo systemctl enable myapp",
+        "key_points": [
+          "Unit files — в /etc/systemd/system/ (пользовательские)",
+          "[Service] ExecStart — команда запуска сервиса",
+          "Restart=on-failure — автоматический перезапуск при падении"
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Troubleshooting: диагностика проблем",
+        "content": "Диагностика проблем с systemd: сначала systemctl status (общий статус, последние логи), затем journalctl -u (полные логи), затем проверка конфигурации сервиса.\n\nОсновные проблемы: сервис не запускается (ошибка в ExecStart, нет прав), сервис падает сразу после запуска (Restart=no и быстрый краш), зависимости не выполнены (After/Requires неправильно настроены), сервис в состоянии failed.\n\nsystemctl --failed показывает все упавшие сервисы. systemd-analyze blame показывает время загрузки каждого сервиса (полезно для оптимизации boot time).\n\nЕсли сервис постоянно перезапускается — проверь Restart= и RestartSec= в unit файле. Если сервис не может создать PID file — проверь права на директорию.",
+        "example": "# Найти все упавшие сервисы\nsystemctl --failed\nsystemctl list-units --state=failed\n\n# Детальный статус упавшего сервиса\nsystemctl status myapp\n\n# Полные логи\njournalctl -u myapp -n 100\n\n# Посмотреть время загрузки сервисов\nsystemd-analyze blame\n\n# Проверить зависимости сервиса\nsystemctl list-dependencies myapp\n\n# Проверить конфигурацию unit файла\nsystemd-analyze verify /etc/systemd/system/myapp.service",
+        "key_points": [
+          "systemctl --failed — все упавшие сервисы",
+          "journalctl -u <service> — полные логи для диагностики",
+          "systemd-analyze blame — время загрузки сервисов"
+        ]
+      }
+    ],
+    "tasks": []
+  },
+  "network_utils": {
+    "title": "Network Utils",
+    "cards": [
+      {
+        "id": 1,
+        "title": "ss и lsof: кто слушает порт?",
+        "content": "ss (socket statistics) — современная замена netstat. Показывает сетевые соединения, открытые порты, статистику. lsof (list open files) — показывает открытые файлы, включая сетевые соединения.\n\nss преимущества: быстрее netstat (использует netlink вместо /proc/net), больше информации, лучше фильтрация. Основные опции: -t (TCP), -u (UDP), -l (listen), -n (числовые адреса), -p (показать процесс).\n\nlsof универсальнее: показывает не только сетевые соединения, но и файлы, pipes, сокеты. Опции: -i (сетевые соединения), -i :PORT (конкретный порт), -p PID (файлы конкретного процесса), -u USER (файлы пользователя).\n\nОбе команды требуют sudo для полной информации о процессах.",
+        "example": "# Какой процесс слушает порт 80?\nsudo ss -tlnp | grep :80\nsudo lsof -i :80\n\n# Все TCP соединения\nss -tan\n\n# UDP соединения\nss -uan\n\n# Все сетевые соединения процесса nginx\nsudo lsof -i -a -c nginx\n# -a = AND (комбинация условий)\n\n# Файлы процесса с PID 1234\nlsof -p 1234",
+        "key_points": [
+          "ss -tlnp — кто слушает TCP порты",
+          "lsof -i :PORT — процесс на конкретном порту",
+          "ss быстрее netstat (устаревшая команда)"
+        ]
+      },
+      {
+        "id": 2,
+        "title": "ip: управление сетью",
+        "content": "ip — современная утилита для управления сетевыми интерфейсами, маршрутизацией, туннелями. Заменила ifconfig, route, arp.\n\nКоманды ip: ip addr (IP адреса интерфейсов), ip link (состояние интерфейсов), ip route (таблица маршрутизации), ip neigh (ARP-таблица), ip tunnel (туннели).\n\nip addr add — добавить IP на интерфейс, ip addr del — удалить. ip link set up/down — включить/выключить интерфейс. ip route add — добавить маршрут, ip route del — удалить.\n\nВсе изменения через ip — временные (до перезагрузки). Для постоянных изменений редактируй конфигурационные файлы (/etc/network/interfaces на Debian, /etc/sysconfig/network-scripts/ на CentOS, или используй NetworkManager/netplan).",
+        "example": "# Посмотреть IP адреса\nip addr show\nip a  # короткая форма\n\n# Конкретный интерфейс\nip addr show eth0\n\n# Таблица маршрутизации\nip route show\nip r  # короткая форма\n\n# Включить/выключить интерфейс\nsudo ip link set eth0 up\nsudo ip link set eth0 down\n\n# Добавить IP адрес\nsudo ip addr add 192.168.1.100/24 dev eth0\n\n# Добавить маршрут\nsudo ip route add 10.0.0.0/8 via 192.168.1.1",
+        "key_points": [
+          "ip addr — IP адреса, ip route — маршруты",
+          "ip заменяет ifconfig, route, arp (устаревшие)",
+          "Изменения временные — для постоянных править конфиги"
+        ]
+      },
+      {
+        "id": 3,
+        "title": "tcpdump: захват трафика",
+        "content": "tcpdump — утилита для захвата и анализа сетевого трафика. Перехватывает пакеты на сетевом интерфейсе и выводит их в консоль или файл.\n\nОсновные опции: -i <interface> (интерфейс, any — все), -n (не резолвить IP в DNS имена), -nn (не резолвить порты в названия сервисов), -c N (захватить N пакетов), -w file.pcap (сохранить в файл), -r file.pcap (прочитать из файла), -A (ASCII содержимое пакетов), -X (HEX и ASCII).\n\nФильтры: port 80 (порт), host 192.168.1.1 (хост), tcp/udp (протокол), src/dst (источник/назначение). Можно комбинировать: tcp and port 80 and host 192.168.1.1.\n\nФайлы .pcap можно открыть в Wireshark для детального анализа.",
+        "example": "# Захватить HTTP трафик на всех интерфейсах\nsudo tcpdump -i any port 80 -nn\n\n# Захватить DNS запросы\nsudo tcpdump -i any udp port 53 -nn\n\n# Только пакеты от конкретного хоста\nsudo tcpdump -i eth0 host 192.168.1.100 -nn\n\n# Сохранить в файл (для Wireshark)\nsudo tcpdump -i eth0 -w capture.pcap\n\n# Прочитать из файла\ntcpdump -r capture.pcap -nn\n\n# Показать содержимое HTTP запросов (ASCII)\nsudo tcpdump -i any port 80 -A",
+        "key_points": [
+          "-i any — захватить на всех интерфейсах",
+          "-nn — не резолвить IP и порты (быстрее)",
+          "-w file.pcap — сохранить для Wireshark"
+        ]
+      },
+      {
+        "id": 4,
+        "title": "ping, traceroute, mtr",
+        "content": "ping — проверка доступности хоста через ICMP Echo Request. traceroute — показывает маршрут пакетов до хоста. mtr — комбинация ping и traceroute с real-time статистикой.\n\nping опции: -c N (отправить N пакетов), -i <seconds> (интервал между пакетами), -W <seconds> (timeout), -s <size> (размер пакета). ping работает через ICMP — некоторые хосты/файрволы блокируют его.\n\ntraceroute показывает все промежуточные хопы (роутеры) до цели. Каждый хоп — это TTL (Time To Live) шаг. Опции: -n (не резолвить IP), -I (использовать ICMP вместо UDP).\n\nmtr — интерактивный traceroute с постоянным обновлением. Показывает packet loss и latency для каждого хопа. Полезен для диагностики сетевых проблем.",
+        "example": "# Проверить доступность\nping -c 4 google.com\n\n# Быстрый ping (интервал 0.2 сек)\nping -c 10 -i 0.2 192.168.1.1\n\n# Traceroute\ntraceroute google.com\n\n# Traceroute с ICMP (как ping)\ntraceroute -I google.com\n\n# mtr (интерактивный traceroute)\nmtr google.com\n\n# mtr с 100 пакетами и выходом\nmtr -c 100 --report google.com",
+        "key_points": [
+          "ping — проверка доступности через ICMP",
+          "traceroute — маршрут пакетов до хоста",
+          "mtr — ping + traceroute с real-time статистикой"
+        ]
+      },
+      {
+        "id": 5,
+        "title": "nc (netcat): швейцарский нож сети",
+        "content": "nc (netcat) — универсальная утилита для работы с TCP/UDP. Может слушать порты, подключаться к портам, передавать файлы, делать port scanning, проксировать соединения.\n\nОсновные режимы: listen (nc -l — слушать порт), connect (nc host port — подключиться), UDP (nc -u), сканирование портов (nc -zv host port-range).\n\nПрименения: проверка доступности порта (вместо telnet), передача файлов (nc -l 1234 < file.txt и nc host 1234 > file.txt), простой чат (два nc -l на разных машинах), backdoor (nc -l -e /bin/bash — опасно!).\n\nnc часто называют \"TCP/IP швейцарским ножом\" — очень гибкий инструмент.",
+        "example": "# Проверить доступность порта\nnc -zv example.com 80\n# -z: scan mode (не отправлять данные)\n# -v: verbose\n\n# Сканировать диапазон портов\nnc -zv example.com 20-100\n\n# Слушать порт (сервер)\nnc -l 1234\n\n# Подключиться к порту (клиент)\nnc localhost 1234\n\n# Передать файл\n# Сервер:\nnc -l 1234 < file.txt\n# Клиент:\nnc server_ip 1234 > file.txt\n\n# HTTP запрос вручную\nprintf \"GET / HTTP/1.1\\r\\nHost: example.com\\r\\n\\r\\n\" | nc example.com 80",
+        "key_points": [
+          "nc -zv host port — проверка доступности порта",
+          "nc -l PORT — слушать порт (сервер)",
+          "Универсальный инструмент для TCP/UDP отладки"
+        ]
+      }
+    ],
+    "tasks": []
+  },
+  "linux_files": {
+    "title": "Linux Files",
+    "cards": [
+      {
+        "id": 1,
+        "title": "/etc/hosts: локальный DNS",
+        "content": "/etc/hosts — файл для статического маппинга имён хостов на IP адреса. Проверяется ДО обращения к DNS (если не изменено в /etc/nsswitch.conf).\n\nФормат: IP_адрес имя_хоста [алиасы]. Пример: 192.168.1.100 myserver server.local.\n\nИспользование: локальная разработка (127.0.0.1 myapp.local), блокировка нежелательных сайтов (0.0.0.0 ads.example.com), override DNS для тестирования (192.168.1.50 production.example.com вместо реального IP).\n\nПорядок резолюции (по умолчанию): /etc/hosts → DNS сервер (/etc/resolv.conf). Можно изменить в /etc/nsswitch.conf (строка hosts:).",
+        "example": "# Посмотреть /etc/hosts\ncat /etc/hosts\n\n# Типичное содержимое:\n127.0.0.1   localhost\n127.0.1.1   hostname\n::1         localhost ip6-localhost\n\n# Добавить запись\necho \"192.168.1.100 myserver\" | sudo tee -a /etc/hosts\n\n# Проверить резолюцию\nping myserver\ngetent hosts myserver\n\n# Блокировка сайта (перенаправить на localhost)\necho \"0.0.0.0 ads.example.com\" | sudo tee -a /etc/hosts",
+        "key_points": [
+          "/etc/hosts проверяется ДО DNS",
+          "Формат: IP hostname [aliases]",
+          "Полезно для локальной разработки и тестирования"
+        ]
+      },
+      {
+        "id": 2,
+        "title": "/etc/resolv.conf: DNS серверы",
+        "content": "/etc/resolv.conf — конфигурационный файл для DNS резолюции. Содержит список DNS серверов, к которым обращается система.\n\nОсновные директивы: nameserver (IP адрес DNS сервера, можно несколько), search (домены для поиска, если запрос без точки), domain (локальный домен).\n\nПример: если в /etc/resolv.conf указано search example.com, то запрос myserver будет резолвиться как myserver.example.com.\n\nВажно: на системах с systemd-resolved или NetworkManager /etc/resolv.conf часто является симлинком и управляется автоматически. Ручные изменения могут быть перезаписаны. Для постоянных изменений настраивай NetworkManager или systemd-resolved.",
+        "example": "# Посмотреть текущие DNS серверы\ncat /etc/resolv.conf\n\n# Типичное содержимое:\nnameserver 8.8.8.8\nnameserver 1.1.1.1\nsearch example.com\n\n# Проверить что /etc/resolv.conf не симлинк\nls -la /etc/resolv.conf\n\n# Временно изменить DNS (до перезагрузки)\necho \"nameserver 1.1.1.1\" | sudo tee /etc/resolv.conf\n\n# Тест DNS резолюции\nnslookup google.com\ndig google.com\nhost google.com",
+        "key_points": [
+          "nameserver — IP адрес DNS сервера",
+          "Может быть симлинком (управляется systemd-resolved)",
+          "search — автодополнение доменов"
+        ]
+      },
+      {
+        "id": 3,
+        "title": "/etc/nsswitch.conf: порядок резолюции",
+        "content": "/etc/nsswitch.conf (Name Service Switch) — конфигурация порядка источников для различных типов данных: хосты, пользователи, группы, пароли.\n\nСтрока hosts: определяет порядок резолюции имён хостов. Значения: files (/etc/hosts), dns (DNS сервер), myhostname (hostname машины), resolve (systemd-resolved).\n\nТипичная конфигурация: hosts: files dns — сначала проверяется /etc/hosts, затем DNS. Если поменять на hosts: dns files — сначала DNS, потом /etc/hosts (обычно не рекомендуется).\n\nДругие секции: passwd (пользователи), group (группы), shadow (пароли), services (порты сервисов). Можно подключать LDAP, NIS, другие источники.",
+        "example": "# Посмотреть /etc/nsswitch.conf\ncat /etc/nsswitch.conf\n\n# Строка hosts:\nhosts: files dns\n# Порядок: 1) /etc/hosts, 2) DNS\n\n# Если изменить на:\nhosts: dns files\n# Порядок: 1) DNS, 2) /etc/hosts\n\n# С systemd-resolved:\nhosts: files resolve dns\n# 1) /etc/hosts, 2) systemd-resolved, 3) DNS\n\n# Проверить резолюцию через getent (использует nsswitch.conf)\ngetent hosts google.com",
+        "key_points": [
+          "hosts: files dns — стандартный порядок резолюции",
+          "files = /etc/hosts, dns = DNS сервер",
+          "Можно подключать LDAP, systemd-resolved и др."
+        ]
+      },
+      {
+        "id": 4,
+        "title": "/proc/: виртуальная файловая система",
+        "content": "/proc/ — виртуальная файловая система (не хранится на диске). Содержит информацию о запущенных процессах и системе в виде файлов.\n\nКаждый процесс имеет директорию /proc/<PID>/: cmdline (команда запуска), cwd (текущая директория, симлинк), environ (переменные окружения), exe (исполняемый файл, симлинк), fd/ (открытые файловые дескрипторы), status (статус процесса).\n\nСистемная информация: /proc/cpuinfo (CPU), /proc/meminfo (память), /proc/uptime (uptime), /proc/loadavg (load average), /proc/net/ (сетевые соединения), /proc/sys/ (системные параметры, можно изменять).\n\nЧтение /proc — безопасно, запись в /proc/sys/ меняет параметры ядра (аналог sysctl).",
+        "example": "# Информация о CPU\ncat /proc/cpuinfo\n\n# Информация о памяти\ncat /proc/meminfo\n\n# Uptime системы\ncat /proc/uptime\n# Вывод: 123456.78 234567.89 (секунды работы, idle time)\n\n# Открытые файлы процесса\nls -l /proc/1234/fd/\n\n# Команда запуска процесса\ncat /proc/1234/cmdline\n\n# Изменить системный параметр\necho 1 | sudo tee /proc/sys/net/ipv4/ip_forward\n# Или через sysctl:\nsudo sysctl -w net.ipv4.ip_forward=1",
+        "key_points": [
+          "/proc/ — виртуальная ФС (не на диске)",
+          "/proc/<PID>/ — информация о процессе",
+          "/proc/sys/ — системные параметры (можно изменять)"
+        ]
+      },
+      {
+        "id": 5,
+        "title": "/var/log/: системные логи",
+        "content": "/var/log/ — стандартная директория для логов в Linux. Разные сервисы пишут свои логи в поддиректории или файлы.\n\nОсновные логи: syslog или messages (общие системные логи), auth.log или secure (аутентификация, sudo, SSH), kern.log (ядро), dmesg (буфер сообщений ядра), /var/log/nginx/, /var/log/apache2/ (веб-серверы), /var/log/mysql/ (БД).\n\nНа системах с systemd логи также доступны через journalctl (хранятся в бинарном формате). Но многие сервисы всё равно пишут в /var/log/ для совместимости.\n\nЛоги ротируются logrotate — автоматически архивируются старые логи (gzip) и создаются новые. Конфигурация: /etc/logrotate.conf и /etc/logrotate.d/.",
+        "example": "# Общий системный лог\nsudo tail -f /var/log/syslog      # Debian/Ubuntu\nsudo tail -f /var/log/messages    # CentOS/RHEL\n\n# Логи аутентификации (SSH, sudo)\nsudo tail -f /var/log/auth.log    # Debian/Ubuntu\nsudo tail -f /var/log/secure      # CentOS/RHEL\n\n# Логи ядра\nsudo tail /var/log/kern.log\ndmesg | tail -50\n\n# Найти большие логи\nsudo du -sh /var/log/*\n\n# Очистить старые логи (осторожно!)\nsudo find /var/log -name \"*.gz\" -mtime +30 -delete",
+        "key_points": [
+          "/var/log/ — стандартная директория логов",
+          "syslog/messages — общие логи, auth.log/secure — аутентификация",
+          "logrotate — автоматическая ротация логов"
+        ]
+      }
+    ],
+    "tasks": []
+  },
+  "http_methods": {
+    "title": "HTTP Methods",
+    "cards": [
+      {
+        "id": 1,
+        "title": "GET: получение данных",
+        "content": "GET — HTTP метод для получения данных с сервера. Самый часто используемый метод (загрузка веб-страниц, API запросы).\n\nОсобенности GET: идемпотентный (повторные запросы дают тот же результат), безопасный (не изменяет данные на сервере), параметры передаются в URL (query string), можно кешировать, можно добавлять в закладки.\n\nОграничения: длина URL ограничена (обычно 2048 символов в браузерах), параметры видны в логах и истории браузера (не используй для паролей!), не подходит для больших данных (используй POST).\n\nИдемпотентность: GET /users/123 можно вызывать 100 раз — результат будет одинаковый.",
+        "example": "# GET запрос с curl\ncurl https://api.example.com/users\n\n# GET с параметрами (query string)\ncurl \"https://api.example.com/users?name=John&age=30\"\n\n# GET с заголовками\ncurl -H \"Authorization: Bearer token123\" https://api.example.com/users\n\n# Сохранить ответ в файл\ncurl -o response.json https://api.example.com/users\n\n# Показать заголовки ответа\ncurl -i https://api.example.com/users",
+        "key_points": [
+          "GET — получение данных, идемпотентный, безопасный",
+          "Параметры в URL (query string)",
+          "Можно кешировать, можно в закладки"
+        ]
+      },
+      {
+        "id": 2,
+        "title": "POST: создание данных",
+        "content": "POST — HTTP метод для отправки данных на сервер. Обычно используется для создания новых ресурсов (новый пользователь, новый пост).\n\nОсобенности POST: НЕ идемпотентный (повторный вызов создаст дубликат), НЕ безопасный (изменяет данные), данные в теле запроса (body), нет лимита на размер (в отличие от GET URL), нельзя кешировать, нельзя в закладки.\n\nТипы данных: application/json (JSON), application/x-www-form-urlencoded (формы HTML), multipart/form-data (загрузка файлов).\n\nПовторный POST создаст дубликат — поэтому обычно возвращается 201 Created с Location заголовком (ссылка на созданный ресурс).",
+        "example": "# POST с JSON данными\ncurl -X POST https://api.example.com/users \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"name\":\"John\",\"email\":\"john@example.com\"}'\n\n# POST с form-data\ncurl -X POST https://api.example.com/login \\\n  -d \"username=john&password=secret\"\n\n# POST с файлом\ncurl -X POST https://api.example.com/upload \\\n  -F \"file=@document.pdf\"\n\n# POST возвращает 201 Created с Location\n# HTTP/1.1 201 Created\n# Location: https://api.example.com/users/123",
+        "key_points": [
+          "POST — создание данных, НЕ идемпотентный",
+          "Данные в body (нет лимита размера)",
+          "Повторный POST создаст дубликат"
+        ]
+      },
+      {
+        "id": 3,
+        "title": "PUT vs PATCH: обновление данных",
+        "content": "PUT и PATCH — оба для обновления данных, но работают по-разному.\n\nPUT — полная замена ресурса. Отправляешь ВСЕ поля ресурса, сервер заменяет целиком. Если поле не указано — оно удаляется (или ставится default значение). PUT идемпотентный — повторные вызовы дают тот же результат.\n\nPATCH — частичное обновление. Отправляешь только изменяемые поля, остальные остаются без изменений. PATCH НЕ идемпотентный (зависит от реализации сервера).\n\nПример: ресурс {name: 'John', age: 30, city: 'NYC'}. PUT {name: 'Jane'} → {name: 'Jane'} (age и city пропали). PATCH {name: 'Jane'} → {name: 'Jane', age: 30, city: 'NYC'} (age и city сохранились).",
+        "example": "# PUT — полная замена\ncurl -X PUT https://api.example.com/users/123 \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"name\":\"Jane\",\"email\":\"jane@example.com\",\"age\":25}'\n# Все поля должны быть указаны\n\n# PATCH — частичное обновление\ncurl -X PATCH https://api.example.com/users/123 \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"age\":26}'\n# Только age обновится, остальные поля без изменений",
+        "key_points": [
+          "PUT — полная замена (все поля)",
+          "PATCH — частичное обновление (только указанные поля)",
+          "PUT идемпотентный, PATCH — нет (зависит от сервера)"
+        ]
+      },
+      {
+        "id": 4,
+        "title": "DELETE: удаление ресурса",
+        "content": "DELETE — HTTP метод для удаления ресурса на сервере.\n\nОсобенности DELETE: идемпотентный (повторное удаление не меняет результат — ресурс всё равно удалён), НЕ безопасный (изменяет состояние сервера), обычно возвращает 204 No Content (успешное удаление без body) или 200 OK (с подтверждением в body).\n\nИдемпотентность: DELETE /users/123 можно вызвать 10 раз — ресурс будет удалён один раз, повторные вызовы вернут 404 Not Found (ресурс уже не существует) или 204 (операция выполнена, ничего не изменилось).\n\nНекоторые API используют \"мягкое\" удаление (soft delete) — ресурс помечается удалённым, но физически остаётся в БД.",
+        "example": "# DELETE запрос\ncurl -X DELETE https://api.example.com/users/123\n\n# С авторизацией\ncurl -X DELETE https://api.example.com/users/123 \\\n  -H \"Authorization: Bearer token123\"\n\n# Типичные ответы:\n# Успешное удаление\nHTTP/1.1 204 No Content\n\n# Или с подтверждением\nHTTP/1.1 200 OK\n{\"message\":\"User deleted successfully\"}\n\n# Ресурс не найден (уже удалён)\nHTTP/1.1 404 Not Found",
+        "key_points": [
+          "DELETE — удаление ресурса, идемпотентный",
+          "Обычно возвращает 204 No Content",
+          "Повторное удаление → 404 или 204 (уже удалён)"
+        ]
+      },
+      {
+        "id": 5,
+        "title": "HEAD, OPTIONS: метаданные и возможности",
+        "content": "HEAD — как GET, но возвращает только заголовки (без body). Используется для проверки существования ресурса, получения размера файла (Content-Length), даты изменения (Last-Modified) без скачивания всего контента.\n\nOPTIONS — запрос поддерживаемых методов для ресурса. Возвращает заголовок Allow с перечислением методов (например, Allow: GET, POST, PUT, DELETE). Используется в CORS (Cross-Origin Resource Sharing) — браузер отправляет preflight OPTIONS запрос перед основным запросом.\n\nHEAD полезен: проверить доступность файла перед скачиванием, получить метаданные без трафика на body, мониторинг (health checks).\n\nOPTIONS полезен: узнать какие методы поддерживает API endpoint, CORS preflight (автоматически браузером).",
+        "example": "# HEAD — только заголовки\ncurl -I https://example.com/large-file.zip\n# Вывод:\n# HTTP/1.1 200 OK\n# Content-Length: 1073741824 (1GB)\n# Last-Modified: Mon, 20 Mar 2026 10:00:00 GMT\n\n# OPTIONS — поддерживаемые методы\ncurl -X OPTIONS https://api.example.com/users/123 -i\n# Вывод:\n# HTTP/1.1 200 OK\n# Allow: GET, PUT, PATCH, DELETE\n# Access-Control-Allow-Methods: GET, PUT, PATCH, DELETE\n\n# Практическое применение HEAD\n# Проверить размер файла перед скачиванием\nsize=$(curl -sI https://example.com/file.zip | grep -i Content-Length | awk '{print $2}')\necho \"File size: $size bytes\"",
+        "key_points": [
+          "HEAD — только заголовки (без body)",
+          "OPTIONS — поддерживаемые методы (Allow header)",
+          "HEAD полезен для метаданных (размер, дата) без скачивания"
+        ]
+      }
+    ],
+    "tasks": []
   }
 }
