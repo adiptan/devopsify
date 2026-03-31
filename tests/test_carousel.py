@@ -37,6 +37,20 @@ class TestLearningCards:
         """Проверка структуры карточек"""
         cards = load_learning_cards()
         
+        # Ожидаемое количество карточек по темам
+        expected_counts = {
+            'nginx': 10,
+            'bash': 15,
+            'kubernetes': 10,
+            'git': 10,
+            'docker': 10,
+            'tcpip': 5,
+            'systemd': 5,
+            'network_utils': 5,
+            'linux_files': 5,
+            'http_methods': 5
+        }
+        
         for topic, topic_data in cards.items():
             # Проверить обязательные поля темы
             assert 'title' in topic_data
@@ -45,10 +59,8 @@ class TestLearningCards:
             
             # Проверить количество карточек
             cards_count = len(topic_data['cards'])
-            if topic == 'bash':
-                assert cards_count == 15, f"{topic} should have 15 cards"
-            else:
-                assert cards_count == 10, f"{topic} should have 10 cards"
+            expected_count = expected_counts.get(topic, 10)  # Default 10 if not specified
+            assert cards_count == expected_count, f"{topic} should have {expected_count} cards, but has {cards_count}"
             
             # Проверить структуру каждой карточки
             for card in topic_data['cards']:
